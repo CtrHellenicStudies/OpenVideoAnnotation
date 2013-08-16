@@ -1,0 +1,45 @@
+body {
+	font-family: "Helvetica Neue", Helvetica, sans-serif;
+	background: #eee;
+	color: #222;
+}
+
+h1 {
+	font-size: 1.8em;
+	margin: 1em 50px;
+}
+
+#controls {
+	margin: 0;
+	padding: 0 1em;
+	width: 18em;
+	position: fixed;
+	top: 2em;
+	right: 2em;
+	background: #fff;
+	border-radius: 10px;
+	-moz-border-radius: 10px;
+	-webkit-border-radius: 10px;
+	z-index:100;
+	box-shadow: 5px 5px 25px rgba(0,0,0,0.5);
+-webkit-box-shadow: 5px 5px 25px rgba(0,0,0,0.5);
+-moz-box-shadow: 5px 5px 25px rgba(0,0,0,0.5);
+}
+
+#airlock {
+	font-size: 1.2em;
+	margin: 2em 50px;
+	padding: 1em 2em;
+	width: 33em;
+	font-family: Garamond, Georgia, serif;
+	background: #F8E5CB;
+	border: 1px solid #D8A56E;
+	border-top-color: #FDFDBE;
+	border-left-color: #FDFDBE;
+	box-shadow: 5px 5px 25px rgba(0,0,0,0.5);
+	-webkit-box-shadow: 5px 5px 25px rgba(0,0,0,0.5);
+	-moz-box-shadow: 5px 5px 25px rgba(0,0,0,0.5);
+}
+#vjs-input-startTime-annotations{
+	/* display:none;*/
+}

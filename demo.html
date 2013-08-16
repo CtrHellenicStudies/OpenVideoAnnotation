@@ -1,0 +1,103 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <title>JS annotation test</title>
+
+    <!-- Annotator -->
+	<script src="http://ajax.googleapis.com/ajax/libs/jquery/1.7/jquery.min.js"></script>
+	<script src="http://assets.annotateit.org/annotator/v1.2.5/annotator-full.min.js"></script>
+	<link rel="stylesheet" href="http://assets.annotateit.org/annotator/v1.2.5/annotator.min.css">
+
+	<!--video-js-->
+	<link href="http://vjs.zencdn.net/4.1/video-js.css" rel="stylesheet">
+	<script src="lib/video-js/video.min.js"></script>
+	
+	<!--RangeSlider Pluging-->
+	<script src="lib/rangeslider.min.js"></script>
+	<link href="lib/rangeslider.min.css" rel="stylesheet">
+	
+	<!--Annotations Pluging-->
+	<script src="build/annotations.min.js"></script>
+	<link href="build/annotations.min.css" rel="stylesheet">
+
+	<!--Demo CSS-->
+	<link href="demo.css" rel="stylesheet">
+  </head>
+
+  <body style="margin:10px">
+    <header>
+      <h1>Javascript annotation service test</h1>
+    </header>
+    
+    <div id="controls">
+      <h3>Controls</h3>
+      <p>
+        <input id="username" value="Mark">
+      </p>
+    </div>
+
+    <div id="airlock">
+      <p><strong>Pellentesque habitant morbi tristique</strong> senectus et netus et malesuada fames ac turpis egestas. Vestibulum tortor quam, feugiat vitae, ultricies eget, tempor sit amet, ante. Donec eu libero sit amet quam egestas semper. <em>Aenean ultricies mi vitae est.</em> Mauris placerat eleifend leo. Quisque sit amet est et sapien ullamcorper pharetra. Vestibulum erat wisi, condimentum sed, <code>commodo vitae</code>, ornare sit amet, wisi. Aenean fermentum, elit eget tincidunt condimentum, eros ipsum rutrum orci, sagittis tempus lacus enim ac dui. <a href="#">Donec non enim</a> in turpis pulvinar facilisis. Ut felis.</p>
+	<video id="vid1" class="video-js vjs-default-skin" controls preload="none" width="640" height="264"
+	poster="http://video-js.zencoder.com/oceans-clip.png"
+	data-setup=''>
+		<source src="http://video-js.zencoder.com/oceans-clip.mp4" type='video/mp4' />
+		<source src="http://video-js.zencoder.com/oceans-clip.webm" type='video/webm' />
+		<source src="http://video-js.zencoder.com/oceans-clip.ogv" type='video/ogg' />
+		<track kind="captions" src="demo.captions.vtt" srclang="en" label="English"></track><!-- Tracks need an ending tag thanks to IE9 -->
+	</video>
+	<br />
+	The same video, but with different annotations:
+	<br />
+	<video id="vid2" class="video-js vjs-default-skin" controls preload="none" width="640" height="264"
+	poster="http://video-js.zencoder.com/oceans-clip.png"
+	data-setup=''>
+		<source src="http://video-js.zencoder.com/oceans-clip.mp4" type='video/mp4' />
+		<source src="http://video-js.zencoder.com/oceans-clip.webm" type='video/webm' />
+		<source src="http://video-js.zencoder.com/oceans-clip.ogv" type='video/ogg' />
+		<track kind="captions" src="demo.captions.vtt" srclang="en" label="English"></track><!-- Tracks need an ending tag thanks to IE9 -->
+	</video>
+    </div>
+
+    <script>
+    	//Options to load in Open Video Annotation, for all the plugins
+    	var options = {
+    		optionsAnnotator: {
+				user: { },
+
+				store: {
+					// The endpoint of the store on your server.
+					prefix: 'http://danielcebrian.com/annotations/api',
+
+					// Attach the uri of the current page to all annotations to allow search.
+					annotationData: {
+						'uri': 'http://danielcebrian.com/annotations/demo.html'
+					},
+
+					// This will perform a "search" action rather than "read" when the plugin
+					// loads. Will request the last 20 annotations for the current url.
+					// eg. /store/endpoint/search?limit=20&uri=http://this/document/only
+					loadFromSearch: {
+						'limit': 10000,
+						'uri': 'http://danielcebrian.com/annotations/demo.html'
+					}
+				}
+			},
+			optionsVideoJS: {},
+			optionsRS: {},
+    		optionsOVA: {posBigNew:'ul'},
+    	}
+    	//Load the plugin Open Video Annotation
+		var ova = new OpenVideoAnnotation.Annotator($('#airlock'),options);
+		
+		//change the user (Experimental)
+		ova.setCurrentUser($('#username').val());
+		$('#username').change(function () {
+			ova.setCurrentUser($(this).val());
+		});
+    </script>
+  </body>
+
+
+</html>
