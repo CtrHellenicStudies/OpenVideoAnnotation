@@ -96,7 +96,6 @@ function vjsAnnotation_(options, API){
 		var allannotations = annotator.plugins['Store'].annotations;
 		player.allannotations = allannotations;
 		plugin.refreshDisplay();
-		plugin.showBetween(10,35);
 		console.log(allannotations);
 		
 		//-- Listener to Range Slider Plugin
@@ -287,7 +286,6 @@ vjsAnnotation.prototype = {
 		
 			var span = $(bar).parent()[0];
 			$.data(span, 'annotation', annotation);//Set the object in the span
-			annotation.highlights = span;//Add the highlights to the annotation
 		
 			//set the editor over the range slider
 			this._setOverRS(this.annotator.editor.element);
@@ -388,7 +386,7 @@ vjsAnnotation.prototype = {
 				annotationHTML.style.marginTop = (-1*parseFloat(annotationHTML.style.top)+count) + 'em';
 				$(an.highlights[0]).show();
 				count++;
-			}else if(typeof an.highlights[0]!='undefined'){
+			}else if(this._isVideoJS(an) && typeof an.highlights[0]!='undefined'){
 				$(an.highlights[0]).hide();
 				an.highlights[0].children[0].style.marginTop = '';
 			}
@@ -515,7 +513,7 @@ vjsAnnotation.prototype = {
 		var annotator = this.annotator,
 			isOpenVideojs = (typeof this.player != 'undefined'),
 			VideoJS = annotator.editor.VideoJS;
-		return (isOpenVideojs && typeof VideoJS!='undefined' && VideoJS!=-1);
+		return (isOpenVideojs && typeof VideoJS!='undefined' && VideoJS!==-1);
 	},
 	//Detect if the annotation is a video-js annotation
 	_isVideoJS: function (an){
@@ -1039,12 +1037,12 @@ videojs.AnDisplay.prototype.onMouseDown = function(event){
 			ElemMargin = parseFloat(elem[1].style.marginTop),
 			emtoPx = parseFloat($(elem[1]).css('height'));
 			
-			boxup.className = "boxup-dashed-line";
-			boxup.style.left = elem[1].style.left;
-			boxup.style.width = elem[1].style.width;
-		
-			boxup.style.top = (ElemTop+ElemMargin-this.el_.scrollTop/emtoPx)+'em';
-			elem[0].parentNode.parentNode.appendChild(boxup);
+		boxup.className = "boxup-dashed-line";
+		boxup.style.left = elem[1].style.left;
+		boxup.style.width = elem[1].style.width;
+	
+		boxup.style.top = (ElemTop+ElemMargin-this.el_.scrollTop/emtoPx)+'em';
+		elem[0].parentNode.parentNode.appendChild(boxup);
 	}
 }
 
@@ -1160,7 +1158,7 @@ Annotator.Plugin.VideoJS = (function(_super) {
 	VideoJS.prototype.input = null;
 
 	VideoJS.prototype.pluginInit = function() {
-		console.log("Plug-pluginInit");
+		console.log("VideoJS-pluginInit");
 		//Check that annotator is working
 		if (!Annotator.supported()) {
 			return;
@@ -1245,7 +1243,7 @@ Annotator.Plugin.VideoJS = (function(_super) {
 			annotator = window.annotator = $.data(wrapper, 'annotator'),
 			isOpenVideojs = (typeof annotator.mplayer != 'undefined'),
 			VideoJS = annotator.editor.VideoJS;
-		return (isOpenVideojs && typeof VideoJS!='undefined' && VideoJS!=-1);
+		return (isOpenVideojs && typeof VideoJS!='undefined' && VideoJS!==-1);
 	};
 	
 	
@@ -1424,6 +1422,7 @@ OpenVideoAnnotation.Annotator = function (element, options) {
 	this.annotator.addPlugin("Permissions", options.optionsAnnotator.user);
 	this.annotator.addPlugin("Store", options.optionsAnnotator.store);
 	this.annotator.addPlugin("Tags");
+	this.annotator.addPlugin("Share");
 	this.annotator.addPlugin("VideoJS");
 	//Will be add the player and the annotations plugin for video-js in the annotator
 	this.annotator.mplayer = {};
