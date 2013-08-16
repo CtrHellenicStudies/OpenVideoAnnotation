@@ -96,11 +96,8 @@ function vjsAnnotation_(options, API){
 		var allannotations = annotator.plugins['Store'].annotations;
 		player.allannotations = allannotations;
 		plugin.refreshDisplay();
+		plugin.showBetween(10,35);
 		console.log(allannotations);
-		
-		this.onKeyUp = function(){
-			console.log("ok");
-		}
 		
 		//-- Listener to Range Slider Plugin
 		player.rangeslider.rstb.on('mousedown', function(){plugin._onMouseDownRS(event)});
@@ -200,6 +197,8 @@ vjsAnnotation.prototype = {
 		var player = this.player || {},
 			controlBar = player.controlBar,
 			seekBar = player.controlBar.progressControl.seekBar;
+			
+		this.updatePrecision = 3;
 		
 		//Components and Quick Aliases
 		this.NewAn = this.components.NewAnnotation = controlBar.NewAnnotation;
@@ -208,6 +207,9 @@ vjsAnnotation.prototype = {
 		this.BackAnDisplay = this.components.BackAnDisplay = controlBar.BackAnDisplay;//Background of the panel
 		this.AnDisplay = this.components.AnDisplay = controlBar.BackAnDisplay.AnDisplay;//Panel with all the annotations
 		this.BackAnDisplayScroll = this.components.BackAnDisplayScroll = controlBar.BackAnDisplayScroll;//Panel with all the annotations
+		this.rsd = this.components.RangeSelectorDisplay = controlBar.BackAnDisplay.RangeSelectorDisplay;//Selection the time to display the annotations
+		this.rsdl = this.components.RangeSelectorLeft = this.rsd.RangeSelectorLeft;
+		this.rsdr = this.components.RangeSelectorRight = this.rsd.RangeSelectorRight;
 		this.rs = player.rangeslider;
 		
 		//local variables
@@ -373,6 +375,25 @@ vjsAnnotation.prototype = {
 			}
 		};
 	},
+	showBetween: function (start,end){
+		var duration = this.player.duration(),
+			start = start || 0,
+			end = end || duration,
+			annotationsHTML = $.makeArray($(this.player.el_).find('.vjs-anpanel-annotation .annotator-hl')),
+			count = 0;
+		for (var index in annotationsHTML){
+			var an = $.data(annotationsHTML[index], 'annotation');
+			if (this._isVideoJS(an) && an.rangeTime.end >= start && an.rangeTime.start <= end && typeof an.highlights[0]!='undefined'){
+				var annotationHTML = an.highlights[0].children[0];
+				annotationHTML.style.marginTop = (-1*parseFloat(annotationHTML.style.top)+count) + 'em';
+				$(an.highlights[0]).show();
+				count++;
+			}else if(typeof an.highlights[0]!='undefined'){
+				$(an.highlights[0]).hide();
+				an.highlights[0].children[0].style.marginTop = '';
+			}
+		}
+	},
 	setposBigNew: function(pos){
 		var pos = pos || 'ul',
 			el = this.player.BigNewAnnotation.el_;
@@ -424,6 +445,12 @@ vjsAnnotation.prototype = {
 		
 		//by default the range slider must be unlocked
 		this.rs.unlock();
+		
+		//set the selection area in the original position
+		var duration = this.player.duration();
+		this.rsd.setPosition(0,0);
+		this.rsd.setPosition(1,this.rs._percent(duration));
+		
 		
 		//whether there is a playing selection
 		this.rs.bar.suspendPlay(); 
@@ -531,7 +558,6 @@ videojs.ControlBar.prototype.options_.children.ShowAnnotations={}; //Button to s
 videojs.ControlBar.prototype.options_.children.NewAnnotation={}; //Button New Annotation
 videojs.ControlBar.prototype.options_.children.BackAnDisplay={}; //Range Slider Time Bar
 videojs.ControlBar.prototype.options_.children.BackAnDisplayScroll={}; //Range Slider Time Bar
-//videojs.ControlBar.prototype.options_.children.AnDisplay={}; //Range Slider Time Bar
 videojs.options.children.BigNewAnnotation={}; //Big Button New Annotation
 
 
@@ -649,6 +675,7 @@ videojs.BackAnDisplay.prototype.init_ = function(){
 
 videojs.BackAnDisplay.prototype.options_ = {
 	children: {
+		'RangeSelectorDisplay': {},
 		'AnDisplay': {},
 	}
 };
@@ -657,6 +684,248 @@ videojs.BackAnDisplay.prototype.createEl = function(){
   return videojs.Component.prototype.createEl.call(this, 'div', {
     className: 'vjs-back-anpanel-annotation',
   });
+};
+
+
+
+/**
+ * The selector to show the annotations in a time selection
+ * @param {videojs.Player|Object} player
+ * @param {Object=} options
+ * @constructor
+ */
+ 
+videojs.RangeSelectorDisplay = videojs.Component.extend({
+	/** @constructor */
+	init: function(player, options){
+	videojs.Component.call(this, player, options);
+		this.on('mousedown', this.onMouseDown);
+		this.handleValue = null; // position of handle on bar, number between 0 and 1
+	}
+});
+
+videojs.RangeSelectorDisplay.prototype.init_ = function(){
+	this.rs = this.player_.rangeslider;
+	this.an = this.player_.annotations;
+	this.start = 0;
+	this.end = this.an.player.duration();
+};
+
+videojs.RangeSelectorDisplay.prototype.options_ = {
+	children: {
+		'RangeSelectorLeft': {},
+		'RangeSelectorRight': {},
+	}
+};
+
+videojs.RangeSelectorDisplay.prototype.createEl = function(){
+	return videojs.Component.prototype.createEl.call(this, 'div', {
+		className: 'vjs-rangeselector-anpanel-annotation',
+	});
+};
+
+videojs.RangeSelectorDisplay.prototype.onMouseDown = function(event) {
+	event.preventDefault();
+	videojs.blockTextSelection();
+	
+	if(!this.rs.options.locked) {
+		videojs.on(document, "mousemove", videojs.bind(this,this.onMouseMove));
+		videojs.on(document, "mouseup", videojs.bind(this,this.onMouseUp));
+	}
+};
+
+videojs.RangeSelectorDisplay.prototype.onMouseUp = function(event) {
+	videojs.off(document, "mousemove", this.onMouseMove, false);
+	videojs.off(document, "mouseup", this.onMouseUp, false);
+};
+
+videojs.RangeSelectorDisplay.prototype.onMouseMove = function(event) {
+	var left = this.calculateDistance(event);
+	if (this.an.rsdl.pressed)
+		this.setPosition(0,left);
+	else if (this.an.rsdr.pressed)
+		this.setPosition(1,left);
+};
+
+videojs.RangeSelectorDisplay.prototype.calculateDistance = function(event){
+	var rstbX = this.getRSTBX();
+	var rstbW = this.getRSTBWidth();
+	var handleW = this.getWidth();
+
+	// Adjusted X and Width, so handle doesn't go outside the bar
+	rstbX = rstbX + (handleW / 2);
+	rstbW = rstbW - handleW;
+
+	// Percent that the click is through the adjusted area
+	return Math.max(0, Math.min(1, (event.pageX - rstbX) / rstbW));
+};
+
+videojs.RangeSelectorDisplay.prototype.getRSTBWidth = function() {
+	return this.el_.offsetWidth;
+};
+videojs.RangeSelectorDisplay.prototype.getRSTBX = function() {
+	return videojs.findPosition(this.el_).left;
+};
+videojs.RangeSelectorDisplay.prototype.getWidth = function() {
+	var arrow = $(this.an.rsdl.el_).find('.vjs-selector-arrow')[0];
+	return arrow.offsetWidth;//does not matter left or right
+};
+
+videojs.RangeSelectorDisplay.prototype.setPosition = function(index,left) {
+	//index = 0 for left side, index = 1 for right side
+	var index = index || 0;
+
+	// Check for invalid position
+	if(isNaN(left)) 
+		return false;
+	
+	// Check index between 0 and 1
+	if(!(index === 0 || index === 1))
+		return false;
+	// Alias
+	var ObjLeft = this.an.rsdl.el_,
+		ObjRight = this.an.rsdr.el_,
+		Obj = this.an[index === 0 ? 'rsdl' : 'rsdr'].el_;
+	
+	// Move the handle and bar from the left based on the current distance
+	this.handleValue = left;
+	
+	//Check if left arrow is over the right arrow
+	if ((index === 0 ?this.updateLeft(left):this.updateRight(left))){
+		if (index===1){//right
+			Obj.style.left = (this.handleValue * 100)+'%';
+			Obj.style.width = ((1-this.handleValue) * 100)+'%';
+		}else{//left
+			Obj.style.left = (this.handleValue * 100)+'%';
+			Obj.style.width = ((this.handleValue) * 100)+'%';
+		}
+		
+		this[index === 0 ? 'start' : 'end'] = this.rs._seconds(left);
+	
+		//Fix the problem  when you press the button and the two arrow are underhand
+		//left.zIndex = 10 and right.zIndex=20. This is always less in this case:
+		if (index === 0 && (this.handleValue * 100) >= 90)
+				$(ObjLeft).find('.vjs-selector-arrow')[0].style.zIndex = 25;
+		else
+				$(ObjLeft).find('.vjs-selector-arrow')[0].style.zIndex = 10;
+		var start = this.rs._seconds(parseFloat(ObjLeft.style.left)/100),
+			end = this.rs._seconds(parseFloat(ObjRight.style.left)/100);
+			
+		this.an.showBetween(start,end);
+	}
+	return true;
+};
+
+
+videojs.RangeSelectorDisplay.prototype.updateLeft = function(left) {
+	var rightVal = this.an.rsdr.el_.style.left!=''?this.an.rsdr.el_.style.left:100;
+	var right = parseFloat(rightVal) / 100;
+	
+	var width = videojs.round((right - left),this.an.updatePrecision); //round necessary for not get 0.6e-7 for example that it's not able for the html css width
+	//(right+0.00001) is to fix the precision of the css in html
+	if(left <= (right+0.00001)) {
+			return true;
+	}
+	return false;
+};
+		
+videojs.RangeSelectorDisplay.prototype.updateRight = function(right) {
+	var leftVal = this.an.rsdl.el_.style.left!=''?this.an.rsdl.el_.style.left:0;
+	var left = parseFloat(leftVal) / 100;
+	
+	//(right+0.00001) is to fix the precision of the css in html
+	if((right+0.00001) >= left) {
+		return true;
+	}
+	return false;
+};
+
+/**
+ * Left Time selector
+ * @param {videojs.Player|Object} player
+ * @param {Object=} options
+ * @constructor
+ */
+videojs.RangeSelectorLeft = videojs.Component.extend({
+	/** @constructor */
+	init: function(player, options){
+		videojs.Component.call(this, player, options);
+		this.on('mousedown', this.onMouseDown);
+		this.pressed = false;
+	}
+});
+
+videojs.RangeSelectorLeft.prototype.init_ = function(){
+	this.rs = this.player_.rangeslider;
+	this.an = this.player_.annotations;
+};
+
+videojs.RangeSelectorLeft.prototype.createEl = function(){
+	return videojs.Component.prototype.createEl.call(this, 'div', {
+		className: 'vjs-leftselector-anpanel-annotation',
+		innerHTML: '<div class="vjs-selector-arrow"></div><div class="vjs-leftselector-back"></div>'
+	});
+};
+
+
+videojs.RangeSelectorLeft.prototype.onMouseDown = function(event) {
+	event.preventDefault();
+	videojs.blockTextSelection();
+	
+	this.pressed = true;
+	videojs.on(document, "mouseup", videojs.bind(this,this.onMouseUp));
+	videojs.addClass(this.el_, 'active');
+};
+
+videojs.RangeSelectorLeft.prototype.onMouseUp = function(event) {
+	videojs.off(document, "mouseup", this.onMouseUp, false);
+	videojs.removeClass(this.el_, 'active');
+	this.pressed = false;
+};
+
+/**
+ * Right Time selector
+ * @param {videojs.Player|Object} player
+ * @param {Object=} options
+ * @constructor
+ */
+videojs.RangeSelectorRight = videojs.Component.extend({
+	/** @constructor */
+	init: function(player, options){
+		videojs.Component.call(this, player, options);
+		this.on('mousedown', this.onMouseDown);
+		this.pressed = false;
+	}
+});
+
+videojs.RangeSelectorRight.prototype.init_ = function(){
+	this.rs = this.player_.rangeslider;
+	this.an = this.player_.annotations;
+};
+
+videojs.RangeSelectorRight.prototype.createEl = function(){
+	return videojs.Component.prototype.createEl.call(this, 'div', {
+		className: 'vjs-rightselector-anpanel-annotation',
+		innerHTML: '<div class="vjs-selector-arrow"></div><div class="vjs-rightselector-back"></div>'
+	});
+};
+
+videojs.RangeSelectorRight.prototype.onMouseDown = function(event) {
+	event.preventDefault();
+	videojs.blockTextSelection();
+	if(!this.rs.options.locked) {
+		this.pressed = true;
+		videojs.on(document, "mouseup", videojs.bind(this,this.onMouseUp));
+		videojs.addClass(this.el_, 'active');
+	}
+};
+
+videojs.RangeSelectorRight.prototype.onMouseUp = function(event) {
+	videojs.off(document, "mouseup", this.onMouseUp, false);
+	videojs.removeClass(this.el_, 'active');
+	if(!this.rs.options.locked) {
+		this.pressed = false;
+	}
 };
 
 /**
@@ -670,6 +939,7 @@ videojs.BackAnDisplayScroll = videojs.Component.extend({
 	init: function(player, options){
 		videojs.Component.call(this, player, options);
 		this.on('mousedown', this.onMouseDown);
+		this.UpValue = 10;
 	}
 });
 
@@ -677,6 +947,25 @@ videojs.BackAnDisplayScroll.prototype.init_ = function(){
 	this.rs = this.player_.rangeslider;
 	this.an = this.player_.annotations;
 	this.mousedownID = -1;
+	var self = this;
+		
+	//Firefox
+	$(this.an.AnDisplay.el_).bind('DOMMouseScroll', function(e){
+		if(e.originalEvent.detail > 0)
+			self.changeScroll(self.UpValue);
+		else 
+			self.changeScroll(-self.UpValue);
+		return false;
+	});
+
+	//IE, Opera, Safari
+	$(this.an.AnDisplay.el_).bind('mousewheel', function(e){
+		if(e.originalEvent.wheelDelta < 0) 
+			self.changeScroll(self.UpValue);
+		else 
+			self.changeScroll(-self.UpValue);
+		return false;
+	});
 };
 
 
@@ -688,21 +977,27 @@ videojs.BackAnDisplayScroll.prototype.createEl = function(){
 };
 
 videojs.BackAnDisplayScroll.prototype.onMouseDown = function(event){
-	var direction = event.target.className=='vjs-down-scroll-annotation'?10:-10;
+	var direction = event.target.className=='vjs-down-scroll-annotation'?this.UpValue:-this.UpValue,
+		self = this;
 	videojs.on(document, "mouseup", videojs.bind(this,this.onMouseUp));
-	var scroll = this.an.AnDisplay.el_;
 	if(this.mousedownID==-1)  //Prevent multimple loops!
 		this.mousedownID = setInterval(function () {
-			scroll.scrollTop=(scroll.scrollTop+direction);
+			self.changeScroll(direction);
 		},100);
 };
 
 videojs.BackAnDisplayScroll.prototype.onMouseUp = function(event){
 	videojs.off(document, "mouseup", this.onMouseUp, false);
+	var self = this;
 	if(this.mousedownID!=-1) {  //Only stop if exists
 		clearInterval(this.mousedownID);
-		this.mousedownID=-1;
+		self.mousedownID=-1;
 	}
+};
+
+videojs.BackAnDisplayScroll.prototype.changeScroll = function(value){
+	var scroll = this.an.AnDisplay.el_;
+	scroll.scrollTop=(scroll.scrollTop+value);
 };
 
 
@@ -741,13 +1036,14 @@ videojs.AnDisplay.prototype.onMouseDown = function(event){
 		//Clone the bar box to make the animation
 		var boxup = document.createElement('div'),
 			ElemTop = parseFloat(elem[1].style.top),
+			ElemMargin = parseFloat(elem[1].style.marginTop),
 			emtoPx = parseFloat($(elem[1]).css('height'));
 			
 			boxup.className = "boxup-dashed-line";
 			boxup.style.left = elem[1].style.left;
 			boxup.style.width = elem[1].style.width;
 		
-			boxup.style.top = (ElemTop-this.el_.scrollTop/emtoPx)+'em';
+			boxup.style.top = (ElemTop+ElemMargin-this.el_.scrollTop/emtoPx)+'em';
 			elem[0].parentNode.parentNode.appendChild(boxup);
 	}
 }
@@ -778,7 +1074,7 @@ videojs.AnDisplay.prototype.onMouseUp = function(event){
 };
 
 videojs.AnDisplay.prototype.onMouseOver = function(event){
-	if (!this.transition){
+	if (!this.transition && !this.an.rsdl.pressed && !this.an.rsdr.pressed){
 		var annotator = this.an.annotator;
 		var elem = $(event.target).parents('.annotator-hl').andSelf();
 	
@@ -801,7 +1097,8 @@ videojs.AnDisplay.prototype.onMouseOver = function(event){
 			var dashed = document.createElement('div'),
 				boxdown = document.createElement('div'),
 				DisplayHeight = parseFloat(this.an.BackAnDisplay.el_.style.height),
-				ElemTop = parseFloat(elem[1].style.top),
+				ElemMarginTop = elem[1].style.marginTop!=''?parseFloat(elem[1].style.marginTop):0;
+				ElemTop = parseFloat(elem[1].style.top)+ElemMarginTop,
 				emtoPx = parseFloat($(elem[1]).css('height'));
 			dashed.className = "dashed-line";
 			boxdown.className = "box-dashed-line";

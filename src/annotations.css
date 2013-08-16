@@ -237,7 +237,7 @@ div.video-js:hover > div.vjs-big-new-annotation {
 	left: 0em;
 	right: 0em;
 	position:absolute;
-	background-color: rgba(0,0,255,0.2);
+	background-color: rgba(0,0,0,0.3);
 	width: auto;
 	font-size: .3em;
 	-webkit-transition: top .4s,height .4s,font-size .4s,-webkit-transform .4s;
@@ -274,12 +274,12 @@ div.video-js:hover > div.vjs-big-new-annotation {
 }
 
 .vjs-default-skin .vjs-up-scroll-annotation{
-	border-bottom: 1em solid #FFF273;
+	border-bottom: 1em solid black;
 }
 
 .vjs-default-skin .vjs-down-scroll-annotation{
 	top: -2em;
-	border-top: 1em solid #FFF273;
+	border-top: 1em solid black;
 }
 .vjs-default-skin .vjs-scroll-anpanel-annotation.disable,
 .vjs-default-skin .vjs-back-anpanel-annotation.disable{
@@ -318,14 +318,9 @@ transition: top .2s,height .2s,font-size .2s,transform .2s;
 	background: -ms-linear-gradient(top, #FFE800, #A69700);
 	background: linear-gradient(top, #FFE800, #A69700);*/
 	opacity: 0.8;
-    overflow-y: scroll;
-    overflow-x: hidden;
+    overflow: hidden;
 }
 
-/* Hide the scrollbar */
-.vjs-default-skin  .vjs-anpanel-annotation::-webkit-scrollbar {
-    width: 0;
-}
 
 .vjs-default-skin .vjs-anpanel-annotation .annotation{
 	height: 1em;
@@ -395,6 +390,67 @@ transition: top .2s,height .2s,font-size .2s,transform .2s;
 	-moz-transition: top 1s,-moz-transform .4s;
 	-o-transition: top 1s,-o-transform .4s;
 	transition: top 1s,transform .4s;
+}
+
+
+
+/* Display Video Time Selector */
+.vjs-default-skin .vjs-rangeselector-anpanel-annotation{
+	height: 100%;
+	width: 100%;
+	position: absolute;
+    top: -1em;
+}
+
+.vjs-default-skin .vjs-leftselector-anpanel-annotation{
+	height: 100%;
+	margin-top: 1em;
+	width:0%;
+	float:left;
+	position:absolute;
+	left: 0%;
+}
+
+.vjs-default-skin .vjs-rightselector-anpanel-annotation{
+	height: 100%;
+	margin-top: 1em;
+	width:100%;
+	float:right;
+	position:absolute;
+}
+.vjs-default-skin .vjs-leftselector-back{
+	right:100%;
+}
+.vjs-default-skin .vjs-rightselector-back{
+	
+}
+.vjs-default-skin .vjs-leftselector-back,
+.vjs-default-skin .vjs-rightselector-back{
+	height: 100%;
+	width: 100%;
+	position:absolute;
+	background-color: rgba(0,0,0,0.4);
+}
+
+.vjs-default-skin .vjs-leftselector-anpanel-annotation .vjs-selector-arrow{
+	z-index:10;
+}
+
+.vjs-default-skin .vjs-rightselector-anpanel-annotation .vjs-selector-arrow{
+	z-index:20;
+}
+
+.vjs-default-skin .vjs-selector-arrow{
+	width: 0;
+	height: 0;
+	border-left: 1em solid transparent;
+	border-right: 1em solid transparent;
+	border-top: 1em solid #4700FF;
+	margin-left: -1em;	
+	opacity: 0.8;
+	
+	position: absolute;
+	top: -1em;
 }
 
 
