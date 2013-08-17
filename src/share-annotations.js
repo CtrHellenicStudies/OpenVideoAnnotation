@@ -45,6 +45,11 @@ Annotator.Plugin.Share = (function(_super) {
 		//Create the actions for the buttons
 		this.buttonsActions();
 		
+		//Init the API plugin
+		var APIoptions = this.initAPI();
+		
+		this.runAPI(APIoptions);
+		
 		//-- Viewer
 		/*this.annotator.viewer.addField({
 			load: this.updateViewer
@@ -84,22 +89,31 @@ Annotator.Plugin.Share = (function(_super) {
 	
 	
 	Share.prototype.createAPIURL = function(method) {
-		var method = method || 1,
-			url = location.protocol + '//' + location.host + location.pathname,
-			url = 'http://danielcebrian.com/annotations/demo.html';
+		var annotator = this.annotator,
+			editor = annotator.editor,
+			method = method || 1,
+			url = location.protocol + '//' + location.host + location.pathname;
+			
 		if (method === 1){
 			//to-do
 		}else if (method === 2){
-			var	ovaContainer = this.getSource('ovaContainer'),
-				ovaSrc = this.getSource('ovaSrc'),
-				ovaStart = this.getSource('ovaStart'),
+			var ovaStart = this.getSource('ovaStart'),
 				ovaEnd = this.getSource('ovaEnd'),
 				ovaText = this.getSource('ovaText');
-			url += '?ovaContainer='+ovaContainer
-				+'&ovaSrc='+ ovaSrc
-				+'&ovaStart='+ ovaStart
-				+'&ovaEnd='+ ovaEnd
-				+'&ovaText='+ ovaText;
+			url += '?ovaStart='+ ovaStart
+					+'&ovaEnd='+ ovaEnd
+					+'&ovaText='+ ovaText;
+			if(editor.VideoJS !== -1){//Video Annotation
+				var	ovaContainer = this.getSource('ovaContainer'),
+					ovaSrc = this.getSource('ovaSrc');
+				url += '&ovaContainer='+ovaContainer
+					+'&ovaSrc='+ ovaSrc;
+			}else{//Text Annotation
+				var	ovastartOffset = this.getSource('ovastartOffset'),
+					ovaendOffset = this.getSource('ovaendOffset');
+				url += '&ovastartOffset='+ovastartOffset
+					+'&ovaendOffset='+ ovaendOffset;
+			}
 		}
 		return url;
 	};
@@ -109,24 +123,165 @@ Annotator.Plugin.Share = (function(_super) {
 			editor = annotator.editor,
 			textarea = $(editor.element).find('textarea')[0],
 			source = source || '';
-		if(source == 'ovaContainer')
-			source = editor.VideoJS !== -1?editor.VideoJS:annotator.wrapper.parent();
-		else if(source == 'ovaSrc')
-			source = editor.VideoJS !== -1?annotator.mplayer[editor.VideoJS].tag.currentSrc:'';
-		else if(source == 'ovaStart')
-			source = editor.VideoJS !== -1?annotator.mplayer[editor.VideoJS].rangeslider.getValues().start:'';
-		else if(source == 'ovaEnd')
-			source = editor.VideoJS !== -1?annotator.mplayer[editor.VideoJS].rangeslider.getValues().end:'';
-		else if(source == 'ovaText')
+			
+		if(source == 'ovaText')
 			source = textarea.value;
+		if (editor.VideoJS !== -1){//Video Annotation
+			if(source == 'ovaContainer')
+				source = editor.VideoJS;
+			else if(source == 'ovaSrc')
+				source = annotator.mplayer[editor.VideoJS].tag.currentSrc;
+			else if(source == 'ovaStart')
+				source = annotator.mplayer[editor.VideoJS].rangeslider.getValues().start;
+			else if(source == 'ovaEnd')
+				source = annotator.mplayer[editor.VideoJS].rangeslider.getValues().end;
+		
+		}else{//Text Annotation
+			var annotation = editor.annotation;
+			console.log(editor.annotation);
+			if(source == 'ovastartOffset')
+				source = annotation.ranges[0].startOffset;
+			else if(source == 'ovaendOffset')
+				source = annotation.ranges[0].endOffset;
+			else if(source == 'ovaStart')
+				source = annotation.ranges[0].start;
+			else if(source == 'ovaEnd')
+				source = annotation.ranges[0].end;
+		}
 		return encodeURIComponent(source);
 	};
 	
-	Share.prototype.getSrc = function() {
-		var annotator = this.annotator,
-			editor = annotator.editor,
-			ovaSrc = editor.VideoJS !== -1?annotator.mplayer[editor.VideoJS].tag.currentSrc:'';
-		return encodeURIComponent(ovaSrc);
+	Share.prototype.initAPI = function() {
+		console.log("initAPI");
+		// -- Detect API in the URL -- //
+		/*
+		The first option is to give a known id of an annotation
+		Example http://url.com/#id=rTcpOjIMT2aF1apDtboC-Q
+		*/
+		var API = {},
+			ovaId = this.getParameterByName('ovaId'), //Method 1 (Obligatory)
+			start = this.getParameterByName('ovaStart'), //Method 2 (Obligatory)
+			end = this.getParameterByName('ovaEnd'), //Method 2 (Obligatory)
+			container = this.getParameterByName('ovaContainer'), //Method 2 (Obligatory)
+			src = this.getParameterByName('ovaSrc'),//Method 2 (Obligatory)
+			text = this.getParameterByName('ovaText'),//Method 2 
+			user = this.getParameterByName('ovaUser'),//Method 2 
+			startOffset = this.getParameterByName('ovastartOffset'),//Method 2 
+			endOffset = this.getParameterByName('ovaendOffset');//Method 2 
+		
+		// Method 1 API with the Id of the annotation
+		if(ovaId != ''){
+			$.extend(API,{method:1,ovaId:ovaId});
+		}
+		//Method 2 API with all the parameter to load the annotation
+		//Example with video: http://danielcebrian.com/annotations/demo.html?ovaContainer=vid1&ovaSrc=http%3A%2F%2Fvideo-js.zencoder.com%2Foceans-clip.mp4&ovaStart=2&ovaEnd=10&ovaText=This%20is%20test&ovaUser=Test%20User
+		//Example with text: http://danielcebrian.com/annotations/demo.html?ovaStart=%2Fp%5B1%5D&ovaEnd=%2Fp%5B1%5D&ovastartOffset=542&ovaendOffset=572&ovaText=API
+	
+		if(start!='' && end!='' && container!='' && src!=''){//video api
+			$.extend(API,{method:2,start:start,end:end,container:container,src:src,text:text,user:user});
+		}else if(start!='' && end!='' && startOffset!='' && endOffset!=''){//text api
+			$.extend(API,{method:2,start:start,end:end,startOffset:startOffset,endOffset:endOffset,text:text,user:user});
+		}
+		return API;
+	}
+	
+	Share.prototype.runAPI = function(API) {
+		var self = this;
+			
+		this.annotator
+			//-- Finished the Annotator DOM
+			.subscribe("annotationsLoaded", function (annotations){
+				console.log("runningAPI");
+				var wrapper = $('.annotator-wrapper').parent()[0],
+					annotator = window.annotator = $.data(wrapper, 'annotator'),
+					mplayer = annotator.mplayer;
+				//Detect if the URL has an API element
+				if (typeof API!='undefined' && typeof API.method!='undefined' && (API.method=='1'||API.method=='2')) {
+					if(API.method=='1'){
+						//ToDo
+						console.log("method 1" );
+					}else if (API.method=='2'){
+						if (typeof mplayer!='undefined'){
+							console.log("method 2");
+							//variable for Video
+							var	container = decodeURIComponent(API.container),
+								player = mplayer[container],
+								isVideo = (typeof player!='undefined' && typeof player!='undefined' && container==player.id_),
+								isNumber = (!isNaN(parseFloat(API.start)) && isFinite(API.start) && !isNaN(parseFloat(API.end)) && isFinite(API.end)),
+								isSource = false;
+								
+							if(isVideo){
+								//Compare without extension
+								var src = decodeURIComponent(API.src),
+									targetSrc = src.substring(0,src.lastIndexOf(".")),
+									playerSrc = player.tag.src==''?player.tag.currentSrc:player.tag.src;
+								playerSrc = playerSrc.substring(0,playerSrc.lastIndexOf("."))
+								isSource = (targetSrc == playerSrc);
+							}
+				
+							//Open Video Annotation
+							if(isVideo && isNumber && isSource){ 
+								var annotation = {
+										rangeTime: {
+											start:API.start,
+											end:API.end
+										},
+										created: new Date().toISOString(),
+										updated: new Date().toISOString(),
+										target:{
+											container: container,
+											src: src
+										},
+										media: 'video',
+										text:decodeURIComponent(API.text),
+										user:decodeURIComponent(API.user)
+									};
+								videojs(player.id_).ready(function(){
+									player.preload('auto');
+									player.play();
+									player.autoPlayAPI = annotation;
+								});
+							}
+							
+							//variable for text
+							var startOffset = API.startOffset,
+								endOffset = API.endOffset;
+							
+							//Text Annotation
+							if(!isVideo && typeof startOffset!='undefined' && typeof endOffset!='undefined'){ 
+								var annotation = {
+									ranges: [{
+										start:decodeURIComponent(API.start),
+										end:decodeURIComponent(API.end),
+										startOffset:decodeURIComponent(API.startOffset),
+										endOffset:decodeURIComponent(API.endOffset),
+									}],
+									created: new Date().toISOString(),
+									updated: new Date().toISOString(),
+									media: 'text',
+									text:decodeURIComponent(API.text),
+									user:decodeURIComponent(API.user)
+								};
+								//show the annotation
+								annotator.setupAnnotation(annotation);
+								//to change the color
+								$(annotation.highlights).addClass('api'); 
+								//animate to the annotation
+								$('html,body').animate({
+									scrollTop: $(annotation.highlights[0]).offset().top},
+									'slow');
+							}
+						}
+					}
+				}
+			})
+	}
+	
+	Share.prototype.getParameterByName = function(name) {
+		name = name.replace(/[\[]/, "\\\[").replace(/[\]]/, "\\\]");
+		var regex = new RegExp("[\\?&]" + name + "=([^&#]*)"),
+		results = regex.exec(location.search);
+		return results == null ? "" : decodeURIComponent(results[1].replace(/\+/g, " "));
 	};
 
 	Share.prototype.updateField = function(field, annotation) {

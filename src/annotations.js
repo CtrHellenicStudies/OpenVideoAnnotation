@@ -56,7 +56,7 @@ Util.mousePosition = function(e, offsetEl) {
 //----------------Load videojs-Annotation Plugin----------------//
 (function (){
 //-- Load Annotation plugin in videojs
-function vjsAnnotation_(options, API){
+function vjsAnnotation_(options){
 	var player = this;
 	
 	player.annotations=new vjsAnnotation(player, options);
@@ -87,8 +87,6 @@ function vjsAnnotation_(options, API){
 		plugin.BackAnDisplayScroll.el_.children[0].style.top = "-"+(plugin.options.NumAnnotations+4+'em');
 		
 		//Get current instance of annotator 
-		annotator.mplayer[player.id_] = player;
-		annotator.an[player.id_] = plugin;
 		player.annotator = annotator;
 		plugin.annotator = annotator;
 		
@@ -111,56 +109,6 @@ function vjsAnnotation_(options, API){
 		
 	}
 	this.on('durationchange', initialVideoFinished);
-	
-	//Detect if the URL has an API element
-	if (typeof API!='undefined' && typeof API.method!='undefined' && (API.method=='1'||API.method=='2')) {
-		if(API.method=='1'){
-			//ToDo
-			console.log("method 1" );
-		}else if (API.method=='2'){
-			console.log("method 2");
-			var	src = decodeURIComponent(API.src),
-				playerSrc = player.tag.src==''?player.tag.currentSrc:player.tag.src;
-				container = decodeURIComponent(API.container),
-				isContainer = (container==player.id_),
-				isNumber = (!isNaN(parseFloat(API.start)) && isFinite(API.start) && !isNaN(parseFloat(API.end)) && isFinite(API.end)),
-				isSource = false;
-			if(isContainer){
-				//Compare without extension
-				var targetSrc = src.substring(0,src.lastIndexOf(".")),
-					playerSrc = playerSrc.substring(0,playerSrc.lastIndexOf("."));
-				isSource = (targetSrc == playerSrc);
-			}
-				
-			if(isContainer && isNumber && isSource){
-				var annotation = {
-						rangeTime: {
-							start:API.start,
-							end:API.end
-						},
-						created: new Date().toISOString(),
-						updated: new Date().toISOString(),
-						target:{
-							container: container,
-							src: src
-						},
-						media: 'video',
-						text:decodeURIComponent(API.text),
-						user:decodeURIComponent(API.user)
-					};
-				vjs(player.id_).ready(function(){
-					var wrapper = $('.annotator-wrapper').parent()[0],
-						annotator = window.annotator = $.data(wrapper, 'annotator');
-					//-- Finished the Annotator DOM
-					annotator.subscribe("annotationsLoaded", function (annotations){
-						player.preload('auto');
-						player.play();
-					})
-					this.autoPlayAPI = annotation;
-				});
-			}
-		}
-	}
 	
 	console.log("Loaded Annotation Plugin");
 }
@@ -1371,6 +1319,7 @@ OpenVideoAnnotation.Annotator = function (element, options) {
 	//Annotator
 	this.annotator = $(element).annotator().data('annotator');
 	
+	
 	//Video-JS
 	/*	
 		mplayers -> Array with the html of all the video-js
@@ -1383,58 +1332,15 @@ OpenVideoAnnotation.Annotator = function (element, options) {
 		var mplayer_ = videojs(mplayers[index],options.optionsVideoJS);
     	this.mplayer[id] = mplayer_;
     }
-    
-    
-	// -- Detect API in the URL -- //
-	/*
-	The first option is to give a known id of an annotation
-	Example http://url.com/#id=rTcpOjIMT2aF1apDtboC-Q
-	*/
-	function getParameterByName(name) {
-		name = name.replace(/[\[]/, "\\\[").replace(/[\]]/, "\\\]");
-		var regex = new RegExp("[\\?&]" + name + "=([^&#]*)"),
-		results = regex.exec(location.search);
-		return results == null ? "" : decodeURIComponent(results[1].replace(/\+/g, " "));
-	}
-	var API = {},
-		ovaId = getParameterByName('ovaId'), //Method 1 (Obligatory)
-		start = getParameterByName('ovaStart'), //Method 2 (Obligatory)
-		end = getParameterByName('ovaEnd'), //Method 2 (Obligatory)
-		container = getParameterByName('ovaContainer'), //Method 2 (Obligatory)
-		src = getParameterByName('ovaSrc'),//Method 2 (Obligatory)
-		text = getParameterByName('ovaText'),//Method 2 
-		user = getParameterByName('ovaUser');//Method 2 
-		
-	// Method 1 API with the Id of the annotation
-	if(ovaId != ''){
-		$.extend(API,{method:1,ovaId:ovaId});
-	}
-	//Method 2 API with all the parameter to load the annotation
-	//Example: http://danielcebrian.com/annotations/demo.html?ovaContainer=vid1&ovaSrc=http%3A%2F%2Fvideo-js.zencoder.com%2Foceans-clip.mp4&ovaStart=2&ovaEnd=10&ovaText=This%20is%20test&ovaUser=Test%20User
-	
-	if(start!='' && end!='' && container!='' && src!=''){
-		$.extend(API,{method:2,start:start,end:end,container:container,src:src,text:text,user:user});
-	}
-	
-		
-	//-- Activate all the plugins --//
-	// Annotator
-	this.annotator.addPlugin("Permissions", options.optionsAnnotator.user);
-	this.annotator.addPlugin("Store", options.optionsAnnotator.store);
-	this.annotator.addPlugin("Tags");
-	this.annotator.addPlugin("Share");
-	this.annotator.addPlugin("VideoJS");
-	//Will be add the player and the annotations plugin for video-js in the annotator
-	this.annotator.mplayer = {};
-	this.annotator.an = {};
-	this.annotator.editor.VideoJS=-1;
 	
 	
 	//Video-JS
+	this.annotator.an = {}; //annotations video-js plugin to annotator
 	for (var index in this.mplayer){
 		//to be their own options is necessary to extend deeply the options with all the childrens
 		this.mplayer[index].rangeslider($.extend(true, {}, options.optionsRS));
-		this.mplayer[index].annotations($.extend(true, {}, options.optionsOVA), API);
+		this.mplayer[index].annotations($.extend(true, {}, options.optionsOVA));
+		this.annotator.an[index]=this.mplayer[index].annotations;
 	}
 
 	
@@ -1476,6 +1382,17 @@ OpenVideoAnnotation.Annotator = function (element, options) {
 		});
 		
 	})(this);
+	
+	//-- Activate all the plugins --//
+	// Annotator
+	this.annotator.addPlugin("Permissions", options.optionsAnnotator.user);
+	this.annotator.addPlugin("Store", options.optionsAnnotator.store);
+	this.annotator.addPlugin("Tags");
+	this.annotator.addPlugin("Share");
+	this.annotator.addPlugin("VideoJS");
+	//Will be add the player and the annotations plugin for video-js in the annotator
+	this.annotator.mplayer = this.mplayer;
+	this.annotator.editor.VideoJS=-1;
 	
 	return this;
 }
