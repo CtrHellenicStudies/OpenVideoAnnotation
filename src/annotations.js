@@ -157,6 +157,9 @@ vjsAnnotation.prototype = {
 		this.rsd = this.components.RangeSelectorDisplay = controlBar.BackAnDisplay.RangeSelectorDisplay;//Selection the time to display the annotations
 		this.rsdl = this.components.RangeSelectorLeft = this.rsd.RangeSelectorLeft;
 		this.rsdr = this.components.RangeSelectorRight = this.rsd.RangeSelectorRight;
+		this.rsdb = this.components.RangeSelectorBar = this.rsd.RangeSelectorBar;
+		this.rsdbl = this.components.RangeSelectorBarL = this.rsdb.RangeSelectorBarL;
+		this.rsdbr = this.components.RangeSelectorBarR = this.rsdb.RangeSelectorBarR;
 		this.rs = player.rangeslider;
 		
 		//local variables
@@ -321,15 +324,17 @@ vjsAnnotation.prototype = {
 			}
 		};
 	},
-	showBetween: function (start,end){
+	showBetween: function (start,end,includeLeft,includeRight){
 		var duration = this.player.duration(),
 			start = start || 0,
 			end = end || duration,
 			annotationsHTML = $.makeArray($(this.player.el_).find('.vjs-anpanel-annotation .annotator-hl')),
 			count = 0;
 		for (var index in annotationsHTML){
-			var an = $.data(annotationsHTML[index], 'annotation');
-			if (this._isVideoJS(an) && an.rangeTime.end >= start && an.rangeTime.start <= end && typeof an.highlights[0]!='undefined'){
+			var an = $.data(annotationsHTML[index], 'annotation'),
+				expressionLeft = includeLeft?(an.rangeTime.end >= start):(an.rangeTime.start >= start),
+				expressionRight = includeRight?(an.rangeTime.start <= end):(an.rangeTime.end <= end);
+			if (this._isVideoJS(an) && expressionLeft && expressionRight && typeof an.highlights[0]!='undefined'){
 				var annotationHTML = an.highlights[0].children[0];
 				annotationHTML.style.marginTop = (-1*parseFloat(annotationHTML.style.top)+count) + 'em';
 				$(an.highlights[0]).show();
@@ -418,7 +423,7 @@ vjsAnnotation.prototype = {
 	},
 	_onMouseDownRS: function(event){
 		event.preventDefault();
-		videojs.blockTextSelection();
+		//videojs.blockTextSelection();
 	
 		if(!this.rs.options.locked) {
 			videojs.on(document, "mousemove", videojs.bind(this,this._onMouseMoveRS));
@@ -484,8 +489,8 @@ vjsAnnotation.prototype = {
 	_sortByDate: function (annotations,type){
 		var type = type || 'asc'; //asc => The value [0] will be the most recent date
 		annotations.sort(function(a,b){
-			a = new Date(createDateFromISO8601(a.updated));
-			b = new Date(createDateFromISO8601(b.updated));
+			a = new Date(typeof a.updated!='undefined'?createDateFromISO8601(a.updated):'');
+			b = new Date(typeof b.updated!='undefined'?createDateFromISO8601(b.updated):'');
 			if (type == 'asc')
 				return b<a?-1:b>a?1:0;
 			else
@@ -497,7 +502,7 @@ vjsAnnotation.prototype = {
 
 
 
-//----------------Create new Components----------------//
+//----------------CREATE new Components for video-js----------------//
 
 //--Charge the new Component into videojs
 videojs.ControlBar.prototype.options_.children.ShowAnnotations={}; //Button to show Annotations
@@ -507,61 +512,31 @@ videojs.ControlBar.prototype.options_.children.BackAnDisplayScroll={}; //Range S
 videojs.options.children.BigNewAnnotation={}; //Big Button New Annotation
 
 
-		
-//-- Design the new components
-/**
- * Create a New Annotation
- * @param {videojs.Player|Object} player
- * @param {Object=} options
- * @constructor
- */
-videojs.NewAnnotation = videojs.Button.extend({
-  /** @constructor */
-  init: function(player, options){
-    videojs.Button.call(this, player, options);
-  }
-});
 
-videojs.NewAnnotation.prototype.init_ = function(){
-	this.rs = this.player_.rangeslider;
-	this.an = this.player_.annotations;
-};
-
-videojs.NewAnnotation.prototype.createEl = function(){
-  return videojs.Button.prototype.createEl.call(this, 'div', {
-    className: 'vjs-new-annotation vjs-menu-button vjs-control',
-  });
-};
-
-videojs.NewAnnotation.prototype.onClick = function(){
-	this.an.newan();
-};
-
-
+//-- Player--> BigNewAnnotation
 
 /**
- * Create a New Annotation
+ * Create a New Annotation with big Button
  * @param {videojs.Player|Object} player
  * @param {Object=} options
  * @constructor
  */
 videojs.BigNewAnnotation = videojs.Button.extend({
-  /** @constructor */
-  init: function(player, options){
-    videojs.Button.call(this, player, options);
-  }
+	/** @constructor */
+	init: function(player, options){
+		videojs.Button.call(this, player, options);
+	}
 });
 
 videojs.BigNewAnnotation.prototype.init_ = function(){
-	this.rs = this.player_.rangeslider;
 	this.an = this.player_.annotations;
 };
 
 videojs.BigNewAnnotation.prototype.createEl = function(){
-  return videojs.Button.prototype.createEl.call(this, 'div', {
-    className: 'vjs-big-new-annotation vjs-menu-button vjs-control',
-    innerHTML: '<div class="vjs-big-menu-button vjs-control">A</div>'
-  });
+	return videojs.Button.prototype.createEl.call(this, 'div', {
+		className: 'vjs-big-new-annotation vjs-menu-button vjs-control',
+		innerHTML: '<div class="vjs-big-menu-button vjs-control">A</div>'
+	});
 };
 
 videojs.BigNewAnnotation.prototype.onClick = function(){
@@ -569,12 +544,16 @@ videojs.BigNewAnnotation.prototype.onClick = function(){
 };
 
 
+
+//-- Player--> ControlBar--> ShowAnnotations
+
 /**
  * Button for show/hide the annotation panel
  * @param {videojs.Player|Object} player
  * @param {Object=} options
  * @constructor
  */
+
 videojs.ShowAnnotations = videojs.Button.extend({
   /** @constructor */
   init: function(player, options){
@@ -583,7 +562,6 @@ videojs.ShowAnnotations = videojs.Button.extend({
 });
 
 videojs.ShowAnnotations.prototype.init_ = function(){
-	this.rs = this.player_.rangeslider;
 	this.an = this.player_.annotations;
 };
 
@@ -601,6 +579,39 @@ videojs.ShowAnnotations.prototype.onClick = function(){
 
 
 
+//-- Player--> ControlBar--> NewAnnotation
+
+/**
+ * Create a New Annotation
+ * @param {videojs.Player|Object} player
+ * @param {Object=} options
+ * @constructor
+ */
+videojs.NewAnnotation = videojs.Button.extend({
+	/** @constructor */
+	init: function(player, options){
+		videojs.Button.call(this, player, options);
+	}
+});
+
+videojs.NewAnnotation.prototype.init_ = function(){
+	this.an = this.player_.annotations;
+};
+
+videojs.NewAnnotation.prototype.createEl = function(){
+	return videojs.Button.prototype.createEl.call(this, 'div', {
+		className: 'vjs-new-annotation vjs-menu-button vjs-control',
+	});
+};
+
+videojs.NewAnnotation.prototype.onClick = function(){
+	this.an.newan();
+};
+
+
+
+//-- Player--> ControlBar--> BackAnDisplay
+
 /**
  * The background annotations panel
  * @param {videojs.Player|Object} player
@@ -615,8 +626,6 @@ videojs.BackAnDisplay = videojs.Component.extend({
 });
 
 videojs.BackAnDisplay.prototype.init_ = function(){
-	this.rs = this.player_.rangeslider;
-	this.an = this.player_.annotations;
 };
 
 videojs.BackAnDisplay.prototype.options_ = {
@@ -633,6 +642,8 @@ videojs.BackAnDisplay.prototype.createEl = function(){
 };
 
 
+
+//-- Player--> ControlBar--> BackAnDisplay--> RangeSelectorDisplay
 
 /**
  * The selector to show the annotations in a time selection
@@ -661,6 +672,7 @@ videojs.RangeSelectorDisplay.prototype.options_ = {
 	children: {
 		'RangeSelectorLeft': {},
 		'RangeSelectorRight': {},
+		'RangeSelectorBar': {},
 	}
 };
 
@@ -672,17 +684,19 @@ videojs.RangeSelectorDisplay.prototype.createEl = function(){
 
 videojs.RangeSelectorDisplay.prototype.onMouseDown = function(event) {
 	event.preventDefault();
-	videojs.blockTextSelection();
+	//videojs.blockTextSelection();
 	
-	if(!this.rs.options.locked) {
-		videojs.on(document, "mousemove", videojs.bind(this,this.onMouseMove));
-		videojs.on(document, "mouseup", videojs.bind(this,this.onMouseUp));
-	}
+	videojs.on(document, "mousemove", videojs.bind(this,this.onMouseMove));
+	videojs.on(document, "mouseup", videojs.bind(this,this.onMouseUp));
+	
+	videojs.removeClass(this.an.rsdb.el_,'disable');
 };
 
 videojs.RangeSelectorDisplay.prototype.onMouseUp = function(event) {
 	videojs.off(document, "mousemove", this.onMouseMove, false);
 	videojs.off(document, "mouseup", this.onMouseUp, false);
+	
+	videojs.addClass(this.an.rsdb.el_,'disable');
 };
 
 videojs.RangeSelectorDisplay.prototype.onMouseMove = function(event) {
@@ -754,22 +768,59 @@ videojs.RangeSelectorDisplay.prototype.setPosition = function(index,left) {
 				$(ObjLeft).find('.vjs-selector-arrow')[0].style.zIndex = 25;
 		else
 				$(ObjLeft).find('.vjs-selector-arrow')[0].style.zIndex = 10;
+		
+		
+		//-- Panel
+		/*var MaxP,MinP,MaxDisP;
+		MaxP = this.player_.isFullScreen?96:92;
+		MinP = this.player_.isFullScreen?0.1:0.5;
+		MaxDisP = this.player_.isFullScreen?3.75:7.5;*/
+		var rsdbl = this.an.rsdbl.el_,
+			rsdbr = this.an.rsdbr.el_,
+			distance = parseFloat(ObjRight.style.left)-parseFloat(ObjLeft.style.left);
+		if (index===0)
+			rsdbl.children[0].innerHTML = videojs.formatTime(this.rs._seconds(left));
+		else
+			rsdbr.children[0].innerHTML = videojs.formatTime(this.rs._seconds(left));
+		if (typeof distance!='undefined' && distance <= 12.5){
+			if(parseFloat(ObjLeft.style.left)<7){
+				rsdbl.style.top = (-1.5) + 'em';rsdbl.style.left = 1 + 'em';
+			}else{
+				rsdbl.style.left = (-2.5) + 'em';rsdbl.style.top = '';
+			}
+				
+			if(parseFloat(ObjRight.style.left)>93){
+				rsdbr.style.top = (-1.5) + 'em';rsdbr.style.right = 1 + 'em';
+			}else{
+				rsdbr.style.right = (-2.5) + 'em';rsdbr.style.top = '';
+			}
+		}else{
+			rsdbl.style.left = 1 + 'em';
+			rsdbr.style.right = 1 + 'em';
+			rsdbl.style.top = '';
+			rsdbr.style.top = '';
+		}
+		
+		
+		
 		var start = this.rs._seconds(parseFloat(ObjLeft.style.left)/100),
-			end = this.rs._seconds(parseFloat(ObjRight.style.left)/100);
-			
-		this.an.showBetween(start,end);
+			end = this.rs._seconds(parseFloat(ObjRight.style.left)/100),
+			include = index;
+		this.an.showBetween(start,end,this.an.rsdl.include,this.an.rsdr.include);
 	}
 	return true;
 };
 
-
 videojs.RangeSelectorDisplay.prototype.updateLeft = function(left) {
 	var rightVal = this.an.rsdr.el_.style.left!=''?this.an.rsdr.el_.style.left:100;
-	var right = parseFloat(rightVal) / 100;
+	var right = parseFloat(rightVal) / 100,
+		bar = this.an.rsdb.el_;
 	
 	var width = videojs.round((right - left),this.an.updatePrecision); //round necessary for not get 0.6e-7 for example that it's not able for the html css width
 	//(right+0.00001) is to fix the precision of the css in html
 	if(left <= (right+0.00001)) {
+			bar.style.left = (left * 100) + '%';
+			bar.style.width = (width * 100) + '%';
 			return true;
 	}
 	return false;
@@ -777,14 +828,23 @@ videojs.RangeSelectorDisplay.prototype.updateLeft = function(left) {
 		
 videojs.RangeSelectorDisplay.prototype.updateRight = function(right) {
 	var leftVal = this.an.rsdl.el_.style.left!=''?this.an.rsdl.el_.style.left:0;
-	var left = parseFloat(leftVal) / 100;
+	var left = parseFloat(leftVal) / 100,
+		bar = this.an.rsdb.el_;
+		
+	var width = videojs.round((right - left),this.an.updatePrecision); //round necessary for not get 0.6e-7 for example that it's not able for the html css width
 	
 	//(right+0.00001) is to fix the precision of the css in html
 	if((right+0.00001) >= left) {
+		bar.style.width = (width * 100) + '%';
+		bar.style.left = ((right  - width) * 100) + '%';
 		return true;
 	}
 	return false;
 };
+
+
+
+//-- Player--> ControlBar--> BackAnDisplay--> RangeSelectorDisplay--> RangeSelectorLeft
 
 /**
  * Left Time selector
@@ -797,13 +857,16 @@ videojs.RangeSelectorLeft = videojs.Component.extend({
 	init: function(player, options){
 		videojs.Component.call(this, player, options);
 		this.on('mousedown', this.onMouseDown);
-		this.pressed = false;
+		this.on('dblclick', this.ondblclick);
+		this.pressed = false;//to know when is mousedown
+		this.include = true;//to know when we want to include the boundary time in the selection or not
 	}
 });
 
 videojs.RangeSelectorLeft.prototype.init_ = function(){
 	this.rs = this.player_.rangeslider;
 	this.an = this.player_.annotations;
+	videojs.addClass(this.el_, 'include');
 };
 
 videojs.RangeSelectorLeft.prototype.createEl = function(){
@@ -816,18 +879,36 @@ videojs.RangeSelectorLeft.prototype.createEl = function(){
 
 videojs.RangeSelectorLeft.prototype.onMouseDown = function(event) {
 	event.preventDefault();
-	videojs.blockTextSelection();
+	//videojs.blockTextSelection();
 	
 	this.pressed = true;
 	videojs.on(document, "mouseup", videojs.bind(this,this.onMouseUp));
 	videojs.addClass(this.el_, 'active');
+	videojs.addClass(this.el_.parentNode, 'active');
 };
 
 videojs.RangeSelectorLeft.prototype.onMouseUp = function(event) {
 	videojs.off(document, "mouseup", this.onMouseUp, false);
 	videojs.removeClass(this.el_, 'active');
+	videojs.removeClass(this.el_.parentNode, 'active');
 	this.pressed = false;
 };
+
+videojs.RangeSelectorLeft.prototype.ondblclick = function(event) {
+	if (this.include){
+		this.include = false;
+		videojs.removeClass(this.el_, 'include');
+	}else{
+		this.include = true;
+		videojs.addClass(this.el_, 'include');
+	}
+	var left = this.an.rsd.calculateDistance(event);
+	this.an.rsd.setPosition(0,left);
+};
+
+
+
+//-- Player--> ControlBar--> BackAnDisplay--> RangeSelectorDisplay--> RangeSelectorRight
 
 /**
  * Right Time selector
@@ -840,13 +921,16 @@ videojs.RangeSelectorRight = videojs.Component.extend({
 	init: function(player, options){
 		videojs.Component.call(this, player, options);
 		this.on('mousedown', this.onMouseDown);
-		this.pressed = false;
+		this.on('dblclick', this.ondblclick);
+		this.pressed = false;//to know when is mousedown
+		this.include = true;//to know when we want to include the boundary time in the selection or not
 	}
 });
 
 videojs.RangeSelectorRight.prototype.init_ = function(){
 	this.rs = this.player_.rangeslider;
 	this.an = this.player_.annotations;
+	videojs.addClass(this.el_, 'include');
 };
 
 videojs.RangeSelectorRight.prototype.createEl = function(){
@@ -858,94 +942,122 @@ videojs.RangeSelectorRight.prototype.createEl = function(){
 
 videojs.RangeSelectorRight.prototype.onMouseDown = function(event) {
 	event.preventDefault();
-	videojs.blockTextSelection();
-	if(!this.rs.options.locked) {
-		this.pressed = true;
-		videojs.on(document, "mouseup", videojs.bind(this,this.onMouseUp));
-		videojs.addClass(this.el_, 'active');
-	}
+	//videojs.blockTextSelection();
+	
+	this.pressed = true;
+	videojs.on(document, "mouseup", videojs.bind(this,this.onMouseUp));
+	videojs.addClass(this.el_, 'active');
+	videojs.addClass(this.el_.parentNode, 'active');
 };
 
 videojs.RangeSelectorRight.prototype.onMouseUp = function(event) {
 	videojs.off(document, "mouseup", this.onMouseUp, false);
 	videojs.removeClass(this.el_, 'active');
-	if(!this.rs.options.locked) {
-		this.pressed = false;
-	}
+	videojs.removeClass(this.el_.parentNode, 'active');
+	this.pressed = false;
 };
 
+videojs.RangeSelectorRight.prototype.ondblclick = function(event) {
+	if (this.include){
+		this.include = false;
+		videojs.removeClass(this.el_, 'include');
+	}else{
+		this.include = true;
+		videojs.addClass(this.el_, 'include');
+	}
+	var left = this.an.rsd.calculateDistance(event);
+	this.an.rsd.setPosition(1,left);
+};
+
+
+
+//-- Player--> ControlBar--> BackAnDisplay--> RangeSelectorDisplay--> RangeSelectorBar
+
 /**
- * The background annotations panel
+ * Bar to display the selected Time
  * @param {videojs.Player|Object} player
  * @param {Object=} options
  * @constructor
  */
-videojs.BackAnDisplayScroll = videojs.Component.extend({
-  	/** @constructor */
+ 
+videojs.RangeSelectorBar = videojs.Component.extend({
+	/** @constructor */
 	init: function(player, options){
 		videojs.Component.call(this, player, options);
-		this.on('mousedown', this.onMouseDown);
-		this.UpValue = 10;
 	}
 });
 
-videojs.BackAnDisplayScroll.prototype.init_ = function(){
-	this.rs = this.player_.rangeslider;
-	this.an = this.player_.annotations;
-	this.mousedownID = -1;
-	var self = this;
-		
-	//Firefox
-	$(this.an.AnDisplay.el_).bind('DOMMouseScroll', function(e){
-		if(e.originalEvent.detail > 0)
-			self.changeScroll(self.UpValue);
-		else 
-			self.changeScroll(-self.UpValue);
-		return false;
-	});
-
-	//IE, Opera, Safari
-	$(this.an.AnDisplay.el_).bind('mousewheel', function(e){
-		if(e.originalEvent.wheelDelta < 0) 
-			self.changeScroll(self.UpValue);
-		else 
-			self.changeScroll(-self.UpValue);
-		return false;
-	});
+videojs.RangeSelectorBar.prototype.init_ = function(){
+	videojs.addClass(this.el_,'disable');
 };
 
-
-videojs.BackAnDisplayScroll.prototype.createEl = function(){
-  return videojs.Component.prototype.createEl.call(this, 'div', {
-    className: 'vjs-scroll-anpanel-annotation',
-    innerHTML: '<div class="vjs-up-scroll-annotation"></div><div class="vjs-down-scroll-annotation"></div>',
-  });
-};
-
-videojs.BackAnDisplayScroll.prototype.onMouseDown = function(event){
-	var direction = event.target.className=='vjs-down-scroll-annotation'?this.UpValue:-this.UpValue,
-		self = this;
-	videojs.on(document, "mouseup", videojs.bind(this,this.onMouseUp));
-	if(this.mousedownID==-1)  //Prevent multimple loops!
-		this.mousedownID = setInterval(function () {
-			self.changeScroll(direction);
-		},100);
-};
-
-videojs.BackAnDisplayScroll.prototype.onMouseUp = function(event){
-	videojs.off(document, "mouseup", this.onMouseUp, false);
-	var self = this;
-	if(this.mousedownID!=-1) {  //Only stop if exists
-		clearInterval(this.mousedownID);
-		self.mousedownID=-1;
+videojs.RangeSelectorBar.prototype.options_ = {
+	children: {
+		'RangeSelectorBarL': {},
+		'RangeSelectorBarR': {},
 	}
 };
 
-videojs.BackAnDisplayScroll.prototype.changeScroll = function(value){
-	var scroll = this.an.AnDisplay.el_;
-	scroll.scrollTop=(scroll.scrollTop+value);
+videojs.RangeSelectorBar.prototype.createEl = function(){
+	return videojs.Component.prototype.createEl.call(this, 'div', {
+		className: 'vjs-barselector-anpanel-annotation',
+	});
 };
 
+
+
+//-- Player--> ControlBar--> BackAnDisplay--> RangeSelectorDisplay--> RangeSelectorBar--> RangeSelectorBarL
+
+/**
+ * This is the left time panel for RangeSelectorBar
+ * @param {videojs.Player|Object} player
+ * @param {Object=} options
+ * @constructor
+ */
+videojs.RangeSelectorBarL = videojs.Component.extend({
+  /** @constructor */
+	init: function(player, options){
+		videojs.Component.call(this, player, options);
+	}
+});
+
+videojs.RangeSelectorBarL.prototype.init_ = function(){};
+
+videojs.RangeSelectorBarL.prototype.createEl = function(){
+	return videojs.Component.prototype.createEl.call(this, 'div', {
+		className: 'vjs-barselector-left',
+		innerHTML: '<span class="vjs-time-text">00:00</span>'
+	});
+};
+
+
+
+//-- Player--> ControlBar--> BackAnDisplay--> RangeSelectorDisplay--> RangeSelectorBar--> RangeSelectorBarR
+/**
+ * This is the right time panel for RangeSelectorBar
+ * @param {videojs.Player|Object} player
+ * @param {Object=} options
+ * @constructor
+ */
+videojs.RangeSelectorBarR = videojs.Component.extend({
+  /** @constructor */
+	init: function(player, options){
+		videojs.Component.call(this, player, options);
+	}
+});
+
+videojs.RangeSelectorBarR.prototype.init_ = function(){};
+
+videojs.RangeSelectorBarR.prototype.createEl = function(){
+	return videojs.Component.prototype.createEl.call(this, 'div', {
+		className: 'vjs-barselector-right',
+		innerHTML: '<span class="vjs-time-text">00:00</span>'
+	});
+};
+
+
+
+//-- Player--> ControlBar--> BackAnDisplay--> AnDisplay
 
 /**
  * Show the annotations in a panel
@@ -953,13 +1065,14 @@ videojs.BackAnDisplayScroll.prototype.changeScroll = function(value){
  * @param {Object=} options
  * @constructor
  */
+ 
 videojs.AnDisplay = videojs.Component.extend({
-  /** @constructor */
-  init: function(player, options){
-    videojs.Component.call(this, player, options);
-	this.on('mousedown', this.onMouseDown);
-	this.on('mouseover', this.onMouseOver);
-  }
+	/** @constructor */
+	init: function(player, options){
+		videojs.Component.call(this, player, options);
+		this.on('mousedown', this.onMouseDown);
+		this.on('mouseover', this.onMouseOver);
+	}
 });
 
 videojs.AnDisplay.prototype.init_ = function(){
@@ -969,9 +1082,9 @@ videojs.AnDisplay.prototype.init_ = function(){
 };
 
 videojs.AnDisplay.prototype.createEl = function(){
-  return videojs.Component.prototype.createEl.call(this, 'div', {
-    className: 'vjs-anpanel-annotation',
-  });
+	return videojs.Component.prototype.createEl.call(this, 'div', {
+		className: 'vjs-anpanel-annotation',
+	});
 };
 
 videojs.AnDisplay.prototype.onMouseDown = function(event){
@@ -1080,11 +1193,84 @@ videojs.AnDisplay.prototype.onCloseViewer = function(){
 		}
 	}
 };
+
+
+
+//-- Player--> ControlBar--> BackAnDisplayScroll
+
+/**
+ * The background annotations panel
+ * @param {videojs.Player|Object} player
+ * @param {Object=} options
+ * @constructor
+ */
+ 
+videojs.BackAnDisplayScroll = videojs.Component.extend({
+  	/** @constructor */
+	init: function(player, options){
+		videojs.Component.call(this, player, options);
+		this.on('mousedown', this.onMouseDown);
+		this.UpValue = 10;
+	}
+});
+
+videojs.BackAnDisplayScroll.prototype.init_ = function(){
+	this.rs = this.player_.rangeslider;
+	this.an = this.player_.annotations;
+	this.mousedownID = -1;
+	var self = this;
+		
+	//Firefox
+	$(this.an.AnDisplay.el_).bind('DOMMouseScroll', function(e){
+		if(e.originalEvent.detail > 0)
+			self.changeScroll(self.UpValue);
+		else 
+			self.changeScroll(-self.UpValue);
+		return false;
+	});
+
+	//IE, Opera, Safari
+	$(this.an.AnDisplay.el_).bind('mousewheel', function(e){
+		if(e.originalEvent.wheelDelta < 0) 
+			self.changeScroll(self.UpValue);
+		else 
+			self.changeScroll(-self.UpValue);
+		return false;
+	});
+};
+
+
+videojs.BackAnDisplayScroll.prototype.createEl = function(){
+  return videojs.Component.prototype.createEl.call(this, 'div', {
+    className: 'vjs-scroll-anpanel-annotation',
+    innerHTML: '<div class="vjs-up-scroll-annotation"></div><div class="vjs-down-scroll-annotation"></div>',
+  });
+};
+
+videojs.BackAnDisplayScroll.prototype.onMouseDown = function(event){
+	var direction = event.target.className=='vjs-down-scroll-annotation'?this.UpValue:-this.UpValue,
+		self = this;
+	videojs.on(document, "mouseup", videojs.bind(this,this.onMouseUp));
+	if(this.mousedownID==-1)  //Prevent multimple loops!
+		this.mousedownID = setInterval(function () {
+			self.changeScroll(direction);
+		},100);
+};
+
+videojs.BackAnDisplayScroll.prototype.onMouseUp = function(event){
+	videojs.off(document, "mouseup", this.onMouseUp, false);
+	var self = this;
+	if(this.mousedownID!=-1) {  //Only stop if exists
+		clearInterval(this.mousedownID);
+		self.mousedownID=-1;
+	}
+};
+
+videojs.BackAnDisplayScroll.prototype.changeScroll = function(value){
+	var scroll = this.an.AnDisplay.el_;
+	scroll.scrollTop=(scroll.scrollTop+value);
+};
 })();
-
-
-
-
 
 
 
@@ -1296,8 +1482,6 @@ Annotator.Plugin.VideoJS = (function(_super) {
 
 
 
-
-
 //----------------PUBLIC OBJECT TO CONTROL THE ANNOTATIONS----------------//
 
 //The name of the plugin that the user will write in the html
@@ -1311,6 +1495,24 @@ OpenVideoAnnotation.Annotator = function (element, options) {
 	options.optionsVideoJS = options.optionsVideoJS || {};
 	options.optionsRS = options.optionsRS || {};
 	options.optionsOVA = options.optionsOVA || {};
+	
+	
+	//if there isn't store optinos it will create a uri and limit variables for the Back-end of Annotations 
+	var store = options.optionsAnnotator.store;
+	if (typeof store=='undefined')
+		options.optionsAnnotator.store = {};
+	if (typeof store.annotationData=='undefined')
+		store.annotationData = {};
+	if (typeof store.annotationData.uri=='undefined'){
+		var uri = location.protocol + '//' + location.host + location.pathname;
+		store.annotationData.store = {uri:uri};
+	}
+	if (typeof store.loadFromSearch=='undefined')
+		store.loadFromSearch={};
+	if (typeof store.loadFromSearch.uri=='undefined')
+		store.loadFromSearch.uri = uri;
+	if (typeof store.loadFromSearch.limit=='undefined')
+		store.loadFromSearch.limit = 10000;
 	
 	//global variables
 	this.currentUser = null;
@@ -1388,7 +1590,7 @@ OpenVideoAnnotation.Annotator = function (element, options) {
 	this.annotator.addPlugin("Permissions", options.optionsAnnotator.user);
 	this.annotator.addPlugin("Store", options.optionsAnnotator.store);
 	this.annotator.addPlugin("Tags");
-	this.annotator.addPlugin("Share");
+	//this.annotator.addPlugin("Share");
 	this.annotator.addPlugin("VideoJS");
 	//Will be add the player and the annotations plugin for video-js in the annotator
 	this.annotator.mplayer = this.mplayer;
@@ -1396,6 +1598,7 @@ OpenVideoAnnotation.Annotator = function (element, options) {
 	
 	return this;
 }
+
 
 
 //----------------Public Functions for Open Video Annotator----------------//
