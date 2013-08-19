@@ -419,12 +419,60 @@ div.video-js:hover > div.vjs-big-new-annotation {
 .vjs-default-skin:hover .vjs-down-scroll-annotation,
 .vjs-default-skin:hover .vjs-up-scroll-annotation {
 	font-size: .9em;
--webkit-transition: top .2s,height .2s,font-size .2s,-webkit-transform .2s;
--moz-transition: top .2s,height .2s,font-size .2s,-moz-transform .2s;
--o-transition: top .2s,height .2s,font-size .2s,-o-transform .2s;
-transition: top .2s,height .2s,font-size .2s,transform .2s;
+	-webkit-transition: top .2s,height .2s,font-size .2s,-webkit-transform .2s;
+	-moz-transition: top .2s,height .2s,font-size .2s,-moz-transform .2s;
+	-o-transition: top .2s,height .2s,font-size .2s,-o-transform .2s;
+	transition: top .2s,height .2s,font-size .2s,transform .2s;
 }
 
+
+
+/* --- ControlBar --> BackAnDisplay --> BackAnDisplayScroll--> BackAnDisplayScrollBar --- */
+
+.vjs-default-skin .vjs-scrollbar-anpanel-annotation{
+	float: left;
+	position: absolute;
+	cursor: pointer;
+	right: 0.7em;
+	width: 0.5em;
+	font-size: .3em;
+	background-color: black;
+	opacity: 0.8;
+	visibility:visible;
+	transition-delay:0s;
+	-webkit-transition: top .4s,height .4s,font-size .4s,-webkit-transform .4s;
+	-moz-transition: top .4s,height .4s,font-size .4s,-moz-transform .4s;
+	-o-transition: top .4s,height .4s,font-size .4s,-o-transform .4s;
+	transition: top .4s,height .4s,font-size .4s,transform .4s;
+}
+
+.vjs-default-skin .vjs-scrollbar-anpanel-annotation.disable{
+	visibility:hidden;
+	opacity:0;
+	-webkit-transition: visibility 1s linear 1s,opacity 1s linear;
+	-moz-transition: visibility 1s linear 1s,opacity 1s linear;
+	-o-transition: visibility 1s linear 1s,opacity 1s linear;
+	transition:visibility 1s linear 1s,opacity 1s linear;
+}
+.vjs-default-skin .vjs-scrollbar-anpanel-annotation:hover{
+	opacity: 0.8;
+	visibility:visible;
+	transition-delay:0s;
+}
+
+.vjs-default-skin:hover .vjs-scrollbar-anpanel-annotation{
+	font-size: .9em;
+}
+
+.vjs-default-skin .vjs-scrollbar-selector{
+	width: 2em;
+	background-color: gray;
+	border: 1px solid black;
+	position:absolute;
+	height: 3em;
+	border-radius: 1em;
+	left: -0.75em;
+}
 
 
 /* ---------------- Modify the CSS of Annotator plugin ---------------- */

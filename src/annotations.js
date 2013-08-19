@@ -50,6 +50,121 @@ Util.mousePosition = function(e, offsetEl) {
     left: e.pageX - offset.left
   };
 };
+/**
+ * jQuery Watch Plugin
+ *
+ * @author Darcy Clarke
+ * @version 2.0
+ *
+ * Copyright (c) 2012 Darcy Clarke
+ * Dual licensed under the MIT and GPL licenses.
+ *
+ * ADDS: 
+ *
+ * - $.watch()
+ *  
+ * USES:
+ *
+ * - DOMAttrModified event
+ * 
+ * FALLBACKS:
+ * 
+ * - propertychange event
+ * - setTimeout() with delay 
+ *
+ * EXAMPLE:
+ * 
+ * $('div').watch('width height', function(){
+ *      console.log(this.style.width, this.style.height);
+ * });
+ *
+ * $('div').animate({width:'100px',height:'200px'}, 500);
+ *
+ */
+
+(function($){
+    $.extend($.fn, {         
+        /**
+         * Watch Method
+         * 
+         * @param {String} the name of the properties to watch
+         * @param {Object} options to overide defaults (only 'throttle' right now)
+         * @param {Function} callback function to be executed when attributes change
+         *
+         * @return {jQuery Object} returns the jQuery object for chainability
+         */   
+        watch : function(props, options, callback){
+            // Dummmy element
+            var element = document.createElement('div');
+
+            /**
+             * Checks Support for Event
+             * 
+             * @param {String} the name of the event
+             * @param {Element Object} the element to test support against
+             *
+             * @return {Boolean} returns result of test (true/false)
+             */
+            var isEventSupported = function(eventName, el) {
+                eventName = 'on' + eventName;
+                var supported = (eventName in el);
+                if(!supported){
+                    el.setAttribute(eventName, 'return;');
+                    supported = typeof el[eventName] == 'function';
+                }
+                return supported;
+            };
+            // Type check options
+            if(typeof(options) == 'function'){
+                callback = options;
+                options = {};
+            }
+            // Type check callback
+            if(typeof(callback) != 'function')
+                callback = function(){};
+            // Map options over defaults
+            options = $.extend({}, { throttle : 10 }, options);
+            /**
+             * Checks if properties have changed
+             * 
+             * @param {Element Object} the element to watch
+             *
+             */
+            var check = function(el) {
+                var data = el.data(),
+                    changed = false,
+                    temp;
+
+                // Loop through properties
+                for(var i=0;i < data.props.length; i++){
+                    temp = el.css(data.props[i]);
+                    if(data.vals[i] != temp){
+                        data.vals[i] = temp;
+                        changed = true;
+                        break;
+                    }
+                }
+                // Run callback if property has changed
+                if(changed && data.cb)
+                    data.cb.call(el, data);
+            };
+            return this.each(function(){
+                var el = $(this),
+                    cb = function(){ check.call(this, el) },
+                    data = { props:props.split(','), cb:callback, vals: [] };
+                $.each(data.props, function(i){ data.vals[i] = el.css(data.props[i]); });
+                el.data(data);
+                if(isEventSupported('DOMAttrModified', element)){
+                    el.on('DOMAttrModified', callback);
+                } else if(isEventSupported('propertychange', element)){
+                    el.on('propertychange', callback);
+                } else {
+                    setInterval(cb, options.throttle);
+                }
+            });
+        }
+    });
+})(jQuery);
 
 
 
@@ -81,10 +196,6 @@ function vjsAnnotation_(options){
 		
 		if(!options.showDisplay) plugin.hideDisplay();
 		
-		//set the number of Annotations to display
-		plugin.BackAnDisplay.el_.style.height = (plugin.options.NumAnnotations+'em');
-		plugin.BackAnDisplay.el_.style.top = "-"+(plugin.options.NumAnnotations+2+'em');
-		plugin.BackAnDisplayScroll.el_.children[0].style.top = "-"+(plugin.options.NumAnnotations+4+'em');
 		
 		//Get current instance of annotator 
 		player.annotator = annotator;
@@ -107,6 +218,10 @@ function vjsAnnotation_(options){
 				'slow');
 		}
 		
+		//set the number of Annotations to display
+		plugin.BackAnDisplay.el_.style.height = plugin.backDSBar.el_.style.height = (plugin.options.NumAnnotations+'em');
+		plugin.BackAnDisplay.el_.style.top = plugin.backDSBar.el_.style.top = "-"+(plugin.options.NumAnnotations+2+'em');
+		plugin.BackAnDisplayScroll.el_.children[0].style.top = "-"+(plugin.options.NumAnnotations+4+'em');
 	}
 	this.on('durationchange', initialVideoFinished);
 	
@@ -153,7 +268,9 @@ vjsAnnotation.prototype = {
 		this.ShowAn =this.components.ShowAnnotations = controlBar.ShowAnnotations;
 		this.BackAnDisplay = this.components.BackAnDisplay = controlBar.BackAnDisplay;//Background of the panel
 		this.AnDisplay = this.components.AnDisplay = controlBar.BackAnDisplay.AnDisplay;//Panel with all the annotations
-		this.BackAnDisplayScroll = this.components.BackAnDisplayScroll = controlBar.BackAnDisplayScroll;//Panel with all the annotations
+		this.BackAnDisplayScroll = this.components.BackAnDisplayScroll = controlBar.BackAnDisplayScroll;//Back Panel with all the annotations
+		this.backDSBar = this.components.BackAnDisplayScrollBar = this.BackAnDisplayScroll.BackAnDisplayScrollBar;//Scroll Bar
+		this.backDSBarSel = this.components.ScrollBarSelector = this.backDSBar.ScrollBarSelector;//Scroll Bar Selector
 		this.rsd = this.components.RangeSelectorDisplay = controlBar.BackAnDisplay.RangeSelectorDisplay;//Selection the time to display the annotations
 		this.rsdl = this.components.RangeSelectorLeft = this.rsd.RangeSelectorLeft;
 		this.rsdr = this.components.RangeSelectorRight = this.rsd.RangeSelectorRight;
@@ -323,6 +440,10 @@ vjsAnnotation.prototype = {
 				count++;
 			}
 		};
+		var start = this.rs._seconds(parseFloat(this.rsdl.el_.style.left)/100),
+			end = this.rs._seconds(parseFloat(this.rsdr.el_.style.left)/100);
+			
+		this.showBetween(start,end,this.rsdl.include,this.rsdr.include);
 	},
 	showBetween: function (start,end,includeLeft,includeRight){
 		var duration = this.player.duration(),
@@ -626,6 +747,13 @@ videojs.BackAnDisplay = videojs.Component.extend({
 });
 
 videojs.BackAnDisplay.prototype.init_ = function(){
+	this.an = this.player_.annotations
+		self = this;
+	//Fix error resizing the display panel. The scroll always went up.
+	$(this.el_).watch('font-size', function(){
+		self.an.backDSBarSel.setPosition(self.an.BackAnDisplayScroll.currentValue,false);
+	});
+
 };
 
 videojs.BackAnDisplay.prototype.options_ = {
@@ -657,7 +785,6 @@ videojs.RangeSelectorDisplay = videojs.Component.extend({
 	init: function(player, options){
 	videojs.Component.call(this, player, options);
 		this.on('mousedown', this.onMouseDown);
-		this.handleValue = null; // position of handle on bar, number between 0 and 1
 	}
 });
 
@@ -747,24 +874,21 @@ videojs.RangeSelectorDisplay.prototype.setPosition = function(index,left) {
 		ObjRight = this.an.rsdr.el_,
 		Obj = this.an[index === 0 ? 'rsdl' : 'rsdr'].el_;
 	
-	// Move the handle and bar from the left based on the current distance
-	this.handleValue = left;
-	
 	//Check if left arrow is over the right arrow
 	if ((index === 0 ?this.updateLeft(left):this.updateRight(left))){
 		if (index===1){//right
-			Obj.style.left = (this.handleValue * 100)+'%';
-			Obj.style.width = ((1-this.handleValue) * 100)+'%';
+			Obj.style.left = (left * 100)+'%';
+			Obj.style.width = ((1-left) * 100)+'%';
 		}else{//left
-			Obj.style.left = (this.handleValue * 100)+'%';
-			Obj.style.width = ((this.handleValue) * 100)+'%';
+			Obj.style.left = (left * 100)+'%';
+			Obj.style.width = ((left) * 100)+'%';
 		}
 		
 		this[index === 0 ? 'start' : 'end'] = this.rs._seconds(left);
 	
 		//Fix the problem  when you press the button and the two arrow are underhand
 		//left.zIndex = 10 and right.zIndex=20. This is always less in this case:
-		if (index === 0 && (this.handleValue * 100) >= 90)
+		if (index === 0 && (left * 100) >= 90)
 				$(ObjLeft).find('.vjs-selector-arrow')[0].style.zIndex = 25;
 		else
 				$(ObjLeft).find('.vjs-selector-arrow')[0].style.zIndex = 10;
@@ -802,10 +926,9 @@ videojs.RangeSelectorDisplay.prototype.setPosition = function(index,left) {
 		}
 		
 		
-		
 		var start = this.rs._seconds(parseFloat(ObjLeft.style.left)/100),
-			end = this.rs._seconds(parseFloat(ObjRight.style.left)/100),
-			include = index;
+			end = this.rs._seconds(parseFloat(ObjRight.style.left)/100);
+			
 		this.an.showBetween(start,end,this.an.rsdl.include,this.an.rsdr.include);
 	}
 	return true;
@@ -1118,8 +1241,9 @@ videojs.AnDisplay.prototype.onMouseUp = function(event){
 		})[0];
 		var displayHeight = (-1)*parseFloat($(this.el_).parent()[0].style.top),
 			emtoPx = parseFloat($(elem[1]).css('height'));
-		
-		$(elem).parent().parent().find('.boxup-dashed-line')[0].style.top=(displayHeight-2)+'em';
+		if (typeof $(elem).parent().parent().find('.boxup-dashed-line')[0]!='undefined'){
+			$(elem).parent().parent().find('.boxup-dashed-line')[0].style.top=(displayHeight-2)+'em';
+		}
 		
 		this.an.player.pause();
 		this.transition = true;
@@ -1210,7 +1334,8 @@ videojs.BackAnDisplayScroll = videojs.Component.extend({
 	init: function(player, options){
 		videojs.Component.call(this, player, options);
 		this.on('mousedown', this.onMouseDown);
-		this.UpValue = 10;
+		this.UpValue = 0.1;
+		this.currentValue = 0;
 	}
 });
 
@@ -1218,27 +1343,35 @@ videojs.BackAnDisplayScroll.prototype.init_ = function(){
 	this.rs = this.player_.rangeslider;
 	this.an = this.player_.annotations;
 	this.mousedownID = -1;
-	var self = this;
+	var self = this,
+		direction;
 		
 	//Firefox
 	$(this.an.AnDisplay.el_).bind('DOMMouseScroll', function(e){
 		if(e.originalEvent.detail > 0)
-			self.changeScroll(self.UpValue);
+			direction = self.UpValue;
 		else 
-			self.changeScroll(-self.UpValue);
+			direction = -self.UpValue;
+		self.an.backDSBarSel.setPosition(self.getPercentScroll()+direction);
 		return false;
 	});
 
 	//IE, Opera, Safari
 	$(this.an.AnDisplay.el_).bind('mousewheel', function(e){
 		if(e.originalEvent.wheelDelta < 0) 
-			self.changeScroll(self.UpValue);
+			direction = self.UpValue;
 		else 
-			self.changeScroll(-self.UpValue);
+			direction = -self.UpValue;
+		self.an.backDSBarSel.setPosition(self.getPercentScroll()+direction);
 		return false;
 	});
 };
 
+videojs.BackAnDisplayScroll.prototype.options_ = {
+	children: {
+		'BackAnDisplayScrollBar': {},
+	}
+};
 
 videojs.BackAnDisplayScroll.prototype.createEl = function(){
   return videojs.Component.prototype.createEl.call(this, 'div', {
@@ -1248,13 +1381,24 @@ videojs.BackAnDisplayScroll.prototype.createEl = function(){
 };
 
 videojs.BackAnDisplayScroll.prototype.onMouseDown = function(event){
-	var direction = event.target.className=='vjs-down-scroll-annotation'?this.UpValue:-this.UpValue,
-		self = this;
-	videojs.on(document, "mouseup", videojs.bind(this,this.onMouseUp));
-	if(this.mousedownID==-1)  //Prevent multimple loops!
-		this.mousedownID = setInterval(function () {
-			self.changeScroll(direction);
-		},100);
+	var self = this;
+	if (event.target.className == 'vjs-scrollbar-anpanel-annotation'){
+		//change position with a click in the scrollbar
+		this.an.backDSBarSel.onMouseMove(event);
+		return false;
+	}else if (event.target.className == 'vjs-scrollbar-selector'){
+		//change position with scrollbar
+		//this event is controlled by this.an.backDSBarSel
+		return false;
+	}else{
+		//change position with arrows
+		var direction = event.target.className=='vjs-down-scroll-annotation'?this.UpValue:-this.UpValue;
+		videojs.on(document, "mouseup", videojs.bind(this,this.onMouseUp));
+		if(this.mousedownID==-1)  //Prevent multimple loops!
+			this.mousedownID = setInterval(function () {
+				self.an.backDSBarSel.setPosition(self.getPercentScroll()+direction);
+			},100);
+	}
 };
 
 videojs.BackAnDisplayScroll.prototype.onMouseUp = function(event){
@@ -1266,10 +1410,180 @@ videojs.BackAnDisplayScroll.prototype.onMouseUp = function(event){
 	}
 };
 
-videojs.BackAnDisplayScroll.prototype.changeScroll = function(value){
-	var scroll = this.an.AnDisplay.el_;
-	scroll.scrollTop=(scroll.scrollTop+value);
+videojs.BackAnDisplayScroll.prototype.getPercentScroll = function(){
+	var scroll = this.an.AnDisplay.el_,
+		maxscroll = scroll.scrollHeight-scroll.offsetHeight,
+		currentValue = scroll.scrollTop;
+	return Math.max(0, Math.min(1, maxscroll != 0 ?(currentValue / maxscroll):0));
 };
+
+videojs.BackAnDisplayScroll.prototype.setPercentScroll = function(percent){
+	var scroll = this.an.AnDisplay.el_,
+		maxscroll = scroll.scrollHeight-scroll.offsetHeight;
+	percent = Math.max(0, Math.min(1, percent?percent:0));
+	scroll.scrollTop = (maxscroll*percent);
+};
+
+
+
+//-- Player--> ControlBar--> BackAnDisplayScroll--> BackAnDisplayScrollBar
+
+/**
+ * The Scroll bar for the display
+ * @param {videojs.Player|Object} player
+ * @param {Object=} options
+ * @constructor
+ */
+ 
+videojs.BackAnDisplayScrollBar = videojs.Component.extend({
+  	/** @constructor */
+	init: function(player, options){
+		videojs.Component.call(this, player, options);
+	}
+});
+
+videojs.BackAnDisplayScrollBar.prototype.init_ = function(){
+	this.rs = this.player_.rangeslider;
+	this.an = this.player_.annotations;
+};
+
+videojs.BackAnDisplayScrollBar.prototype.options_ = {
+	children: {
+		'ScrollBarSelector': {},
+	}
+};
+
+videojs.BackAnDisplayScrollBar.prototype.createEl = function(){
+  return videojs.Component.prototype.createEl.call(this, 'div', {
+    className: 'vjs-scrollbar-anpanel-annotation',
+  });
+};
+
+
+
+//-- Player--> ControlBar--> BackAnDisplayScroll--> BackAnDisplayScrollBar--> ScrollBarSelector
+
+/**
+ * The Scroll bar for the display
+ * @param {videojs.Player|Object} player
+ * @param {Object=} options
+ * @constructor
+ */
+ 
+videojs.ScrollBarSelector = videojs.Component.extend({
+  	/** @constructor */
+	init: function(player, options){
+		videojs.Component.call(this, player, options);
+		this.on('mousedown', this.onMouseDown);
+	}
+});
+
+videojs.ScrollBarSelector.prototype.init_ = function(){
+	this.rs = this.player_.rangeslider;
+	this.an = this.player_.annotations;
+	videojs.addClass(this.an.backDSBar.el_, 'disable');
+};
+
+
+videojs.ScrollBarSelector.prototype.createEl = function(){
+	return videojs.Component.prototype.createEl.call(this, 'div', {
+		className: 'vjs-scrollbar-selector',
+	});
+};
+
+videojs.ScrollBarSelector.prototype.onMouseDown = function(event){
+	event.preventDefault();
+	//videojs.blockTextSelection();
+	videojs.on(document, "mousemove", videojs.bind(this,this.onMouseMove));
+	videojs.on(document, "mouseup", videojs.bind(this,this.onMouseUp));
+}
+
+videojs.ScrollBarSelector.prototype.onMouseUp = function(event){
+	videojs.off(document, "mousemove", this.onMouseMove, false);
+	videojs.off(document, "mouseup", this.onMouseUp, false);
+};
+
+videojs.ScrollBarSelector.prototype.onMouseMove = function(event){
+	var top = this.calculateDistance(event);
+	top = this.parseMaxPercent(top); //set the max value fixing the height of the handle
+	this.setPosition(top);
+}
+
+videojs.ScrollBarSelector.prototype.calculateDistance = function(event){
+	var scrollY = this.getscrollY();
+	var scrollH = this.getscrollHeight();
+	var handleH = this.getHeight();
+	
+	// Adjusted X and Width, so handle doesn't go outside the bar
+	scrollY = scrollY + (handleH);
+	scrollH = scrollH - (handleH);
+	// Adjusted X and Width, so handle doesn't go outside the bar
+	// Percent that the click is through the adjusted area
+	return Math.max(0, Math.min(1, (event.pageY - scrollY) / scrollH));
+};
+
+videojs.ScrollBarSelector.prototype.getscrollHeight = function() {
+	return this.el_.parentNode.offsetHeight;
+};
+videojs.ScrollBarSelector.prototype.getscrollY = function() {
+	return videojs.findPosition(this.el_.parentNode).top;
+};
+videojs.ScrollBarSelector.prototype.getHeight = function() {
+	return this.el_.offsetHeight;
+};
+videojs.ScrollBarSelector.prototype.parseMaxHeight = function(top){
+	var scrollH = this.getscrollHeight(),
+		handleH = this.getHeight(),
+		percent = handleH / scrollH;
+	return Math.max(0,Math.min(1-percent, top));
+};
+
+videojs.ScrollBarSelector.prototype.parseMaxPercent = function(top){
+	var scrollH = this.getscrollHeight(),
+		handleH = this.getHeight(),
+		percent = handleH / scrollH,
+		newTop = top;
+	if(top >= (1-percent))
+		newTop = 1;
+	return newTop;
+};
+
+videojs.ScrollBarSelector.prototype.setPosition = function(top,showBar){
+	var showBar = typeof showBar != 'undefined'?showBar:true;
+	
+	// Check for invalid position
+	if(isNaN(top)) 
+		return false;
+		
+	// Show the Scrollbar
+	if(showBar){
+		videojs.removeClass(this.an.backDSBar.el_, 'disable')
+	}
+	
+	// Alias
+	var Obj = this.el_,
+		scroll = this.an.BackAnDisplayScroll;
+	
+	Obj.style.top = (this.parseMaxHeight(top) * 100) + '%';
+	scroll.setPercentScroll(top);
+	
+	//Hide the Scrollbar in 1 sec
+	if(showBar){
+		var _self = this;
+		if (typeof this.Timeout!='undefined')
+			clearTimeout(this.Timeout);
+		this.Timeout = window.setTimeout(function () {
+			videojs.addClass(_self.an.backDSBar.el_, 'disable');
+		}, 1000);
+	}
+	
+	//set current position
+	this.an.BackAnDisplayScroll.currentValue = top;
+	return true;
+}
+
+
+
 })();
 
 
@@ -1590,7 +1904,7 @@ OpenVideoAnnotation.Annotator = function (element, options) {
 	this.annotator.addPlugin("Permissions", options.optionsAnnotator.user);
 	this.annotator.addPlugin("Store", options.optionsAnnotator.store);
 	this.annotator.addPlugin("Tags");
-	//this.annotator.addPlugin("Share");
+	this.annotator.addPlugin("Share");
 	this.annotator.addPlugin("VideoJS");
 	//Will be add the player and the annotations plugin for video-js in the annotator
 	this.annotator.mplayer = this.mplayer;
