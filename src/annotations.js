@@ -223,7 +223,7 @@ function vjsAnnotation_(options){
 		plugin.BackAnDisplay.el_.style.top = plugin.backDSBar.el_.style.top = "-"+(plugin.options.NumAnnotations+2+'em');
 		plugin.BackAnDisplayScroll.el_.children[0].style.top = "-"+(plugin.options.NumAnnotations+4+'em');
 	}
-	this.on('durationchange', initialVideoFinished);
+	this.on('firstplay', initialVideoFinished);
 	
 	console.log("Loaded Annotation Plugin");
 }
@@ -602,7 +602,7 @@ vjsAnnotation.prototype = {
 			if(isContainer){
 				//Compare without extension
 				var targetSrc = an.target.src.substring(0,an.target.src.lastIndexOf(".")),
-					playerSrc = player.tag.currentSrc.substring(0,player.tag.currentSrc.lastIndexOf("."));
+					playerSrc = player.options_.sources[0].src.substring(0,player.options_.sources[0].src.lastIndexOf("."));
 				isSource = (targetSrc == playerSrc);
 			}
 		return (isOpenVideojs && isVideo && isContainer && isSource && isNumber);
@@ -1659,8 +1659,9 @@ Annotator.Plugin.VideoJS = (function(_super) {
 			annotation.media = "video"; // - media
 			annotation.target = annotation.target || {}; // - target
 			annotation.target.container = player.id_ || ""; // - target.container
-			annotation.target.src = player.tag.currentSrc || ""; // - target.src (media source)
-			ext = (player.tag.currentSrc.substring(player.tag.currentSrc.lastIndexOf("."))).toLowerCase(); 
+			console.log(player);
+			annotation.target.src = player.options_.sources[0].src || ""; // - target.src (media source)
+			ext = (player.options_.sources[0].src.substring(player.options_.sources[0].src.lastIndexOf("."))).toLowerCase(); 
 			annotation.target.ext = ext || ""; // - target.ext (extension)
 			annotation.rangeTime = 	annotation.rangeTime || {};	// - rangeTime
 			annotation.rangeTime.start = time.start || 0; // - rangeTime.start

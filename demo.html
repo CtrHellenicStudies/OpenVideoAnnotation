@@ -13,6 +13,9 @@
 	<link href="http://vjs.zencdn.net/4.1/video-js.css" rel="stylesheet">
 	<script src="lib/video-js/video.min.js"></script>
 	
+	<!--Youtube Pluging-->
+	<script src="lib/video-js/vjs.youtube.js"></script>
+	
 	<!--RangeSlider Pluging-->
 	<script src="lib/rangeslider.min.js"></script>
 	<link href="lib/rangeslider.min.css" rel="stylesheet">
@@ -62,6 +65,13 @@
 		<source src="http://video-js.zencoder.com/oceans-clip.ogv" type='video/ogg' />
 		<track kind="captions" src="demo.captions.vtt" srclang="en" label="English"></track><!-- Tracks need an ending tag thanks to IE9 -->
 	</video>
+	<br />
+	And you could use youtube video:
+	<br />
+	<video id="vid3" class="video-js vjs-default-skin" controls preload="none" width="640" height="264"
+	data-setup=''>
+		<source src="http://www.youtube.com/watch?v=-m_S-IDs3Wg" type="video/youtube">
+	</video>
     </div>
 
     <script>
@@ -96,7 +106,7 @@
 					}
 				}
 			},
-			optionsVideoJS: {},
+			optionsVideoJS: {techOrder: ["html5","flash","youtube"]},
 			optionsRS: {},
     		optionsOVA: {posBigNew:'ul'},
     	}
