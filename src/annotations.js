@@ -178,6 +178,7 @@ function vjsAnnotation_(options){
 	
 	//When the DOM and the video media is loaded
 	function initialVideoFinished(event) {
+	console.log("aqui");
 		var plugin = player.annotations;
 		
 		//All components will be initialize after they have been loaded by videojs
@@ -204,8 +205,10 @@ function vjsAnnotation_(options){
 		//get annotations
 		var allannotations = annotator.plugins['Store'].annotations;
 		player.allannotations = allannotations;
+		console.log("va a refrescar");
 		plugin.refreshDisplay();
 		console.log(allannotations);
+		console.log(player.duration());
 		
 		//-- Listener to Range Slider Plugin
 		player.rangeslider.rstb.on('mousedown', function(){plugin._onMouseDownRS(event)});
@@ -223,7 +226,13 @@ function vjsAnnotation_(options){
 		plugin.BackAnDisplay.el_.style.top = plugin.backDSBar.el_.style.top = "-"+(plugin.options.NumAnnotations+2+'em');
 		plugin.BackAnDisplayScroll.el_.children[0].style.top = "-"+(plugin.options.NumAnnotations+4+'em');
 	}
-	this.on('firstplay', initialVideoFinished);
+	var durationChanged = function(){
+		if (player.techName == 'Youtube')
+			initialVideoFinished();
+		else
+			player.on('durationchange',initialVideoFinished);
+	}
+	player.on('firstplay', durationChanged);
 	
 	console.log("Loaded Annotation Plugin");
 }
@@ -440,6 +449,7 @@ vjsAnnotation.prototype = {
 				count++;
 			}
 		};
+		console.log(this.AnDisplay.el_);
 		var start = this.rs._seconds(parseFloat(this.rsdl.el_.style.left)/100),
 			end = this.rs._seconds(parseFloat(this.rsdr.el_.style.left)/100);
 			
