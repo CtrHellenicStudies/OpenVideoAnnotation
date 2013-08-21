@@ -547,8 +547,13 @@ vjsAnnotation.prototype = {
 			
 		elem[0].style.display = 'block'; //Show the adder
 		
-		positionAdder.left = positionLeft.left + (positionRight.left - positionLeft.left) / 2 - positionAnnotator.left;
-		positionAdder.top = positionLeft.top - positionAnnotator.top;
+		if (this.player.isFullScreen){
+			positionAdder.top = positionLeft.top;
+			positionAdder.left = positionLeft.left + (positionRight.left - positionLeft.left) / 2;
+		}else{
+			positionAdder.left = positionLeft.left + (positionRight.left - positionLeft.left) / 2 - positionAnnotator.left;
+			positionAdder.top = positionLeft.top - positionAnnotator.top;
+		}
 		
 		elem.css(positionAdder);
 	},
