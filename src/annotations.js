@@ -178,7 +178,6 @@ function vjsAnnotation_(options){
 	
 	//When the DOM and the video media is loaded
 	function initialVideoFinished(event) {
-	console.log("aqui");
 		var plugin = player.annotations;
 		
 		//All components will be initialize after they have been loaded by videojs
@@ -205,20 +204,24 @@ function vjsAnnotation_(options){
 		//get annotations
 		var allannotations = annotator.plugins['Store'].annotations;
 		player.allannotations = allannotations;
-		console.log("va a refrescar");
 		plugin.refreshDisplay();
 		console.log(allannotations);
-		console.log(player.duration());
 		
 		//-- Listener to Range Slider Plugin
 		player.rangeslider.rstb.on('mousedown', function(){plugin._onMouseDownRS(event)});
-		
 		//Open the autoPlay from the API
-		if (this.autoPlayAPI){
-			player.annotations.showAnnotation(this.autoPlayAPI,true);
-			$('html,body').animate({
-				scrollTop: $("#"+player.id_).offset().top},
-				'slow');
+		if (player.autoPlayAPI){
+			var AfterPlay = function (){
+				player.one('play', AfterPlay);//fix the delay in the youtube plugin
+				player.annotations.showAnnotation(player.autoPlayAPI);
+				$('html,body').animate({
+					scrollTop: $("#"+player.id_).offset().top},
+					'slow');
+			}
+			if (player.techName == 'Youtube')
+				player.one('play', AfterPlay);
+			else
+				AfterPlay();
 		}
 		
 		//set the number of Annotations to display
@@ -226,13 +229,11 @@ function vjsAnnotation_(options){
 		plugin.BackAnDisplay.el_.style.top = plugin.backDSBar.el_.style.top = "-"+(plugin.options.NumAnnotations+2+'em');
 		plugin.BackAnDisplayScroll.el_.children[0].style.top = "-"+(plugin.options.NumAnnotations+4+'em');
 	}
-	var durationChanged = function(){
-		if (player.techName == 'Youtube')
-			initialVideoFinished();
-		else
-			player.on('durationchange',initialVideoFinished);
-	}
-	player.on('firstplay', durationChanged);
+	if (player.techName == 'Youtube')
+		player.one('play', initialVideoFinished);
+	else
+		player.one('durationchange', initialVideoFinished);
+	
 	
 	console.log("Loaded Annotation Plugin");
 }
@@ -336,7 +337,6 @@ vjsAnnotation.prototype = {
 	},
 	showAnnotation: function(annotation){
 		var isVideo = this._isVideoJS(annotation);
-		
 		if (isVideo){
 			var start = annotation.rangeTime.start,
 				end = annotation.rangeTime.end;
@@ -449,7 +449,6 @@ vjsAnnotation.prototype = {
 				count++;
 			}
 		};
-		console.log(this.AnDisplay.el_);
 		var start = this.rs._seconds(parseFloat(this.rsdl.el_.style.left)/100),
 			end = this.rs._seconds(parseFloat(this.rsdr.el_.style.left)/100);
 			
@@ -607,7 +606,6 @@ vjsAnnotation.prototype = {
 	//Detect if the annotation is a video-js annotation
 	_isVideoJS: function (an){
 		var player = this.player,
-			annotator = player.annotator,
 			rt = an.rangeTime,
 			isOpenVideojs = (typeof this.player != 'undefined'),
 			isVideo = (typeof an.media!='undefined' && an.media=='video'),
@@ -1674,7 +1672,6 @@ Annotator.Plugin.VideoJS = (function(_super) {
 			annotation.media = "video"; // - media
 			annotation.target = annotation.target || {}; // - target
 			annotation.target.container = player.id_ || ""; // - target.container
-			console.log(player);
 			annotation.target.src = player.options_.sources[0].src || ""; // - target.src (media source)
 			ext = (player.options_.sources[0].src.substring(player.options_.sources[0].src.lastIndexOf("."))).toLowerCase(); 
 			annotation.target.ext = ext || ""; // - target.ext (extension)
@@ -1753,12 +1750,6 @@ Annotator.Plugin.VideoJS = (function(_super) {
 		
 			
 		this.annotator
-			//-- Finished the Annotator DOM
-			/*.subscribe("annotationsLoaded", function (annotations){
-				console.log("annotationsLoaded");
-				var wrapper = $('.annotator-wrapper').parent()[0],
-					annotator = window.annotator = $.data(wrapper, 'annotator');
-			})*/
 			//-- Editor
 			.subscribe("annotationEditorShown", function (editor,annotation) {
 				console.log("annotationEditorShown");
@@ -1862,6 +1853,11 @@ OpenVideoAnnotation.Annotator = function (element, options) {
 	for (var index in mplayers){
 		var id = mplayers[index].id;
 		var mplayer_ = videojs(mplayers[index],options.optionsVideoJS);
+		//solve a problem with firefox. In Firefox the src() function is loaded before charge the optionsVideoJS, and the techOrder are not loaded
+		if (vjs.IS_FIREFOX && typeof options.optionsVideoJS.techOrder !='undefined'){
+			mplayer_.options_.techOrder = options.optionsVideoJS.techOrder;
+			mplayer_.src(mplayer_.options_['sources']);
+		}
     	this.mplayer[id] = mplayer_;
     }
 	
