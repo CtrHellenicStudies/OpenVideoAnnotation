@@ -176,7 +176,7 @@ function vjsAnnotation_(options){
 	
 	player.annotations=new vjsAnnotation(player, options);
 	
-	//When the DOM and the video media is loaded
+	//When the DOM, Range Slider and the video media is loaded
 	function initialVideoFinished(event) {
 		var plugin = player.annotations;
 		
@@ -211,29 +211,25 @@ function vjsAnnotation_(options){
 		player.rangeslider.rstb.on('mousedown', function(){plugin._onMouseDownRS(event)});
 		//Open the autoPlay from the API
 		if (player.autoPlayAPI){
-			var AfterPlay = function (){
-				player.one('play', AfterPlay);//fix the delay in the youtube plugin
+			var OnePlay = function (){
 				player.annotations.showAnnotation(player.autoPlayAPI);
 				$('html,body').animate({
 					scrollTop: $("#"+player.id_).offset().top},
 					'slow');
 			}
 			if (player.techName == 'Youtube')
-				player.one('play', AfterPlay);
+				setTimeout(OnePlay, 100);//fix the delay playing youtube
 			else
-				AfterPlay();
+				OnePlay();
 		}
 		
 		//set the number of Annotations to display
 		plugin.BackAnDisplay.el_.style.height = plugin.backDSBar.el_.style.height = (plugin.options.NumAnnotations+'em');
 		plugin.BackAnDisplay.el_.style.top = plugin.backDSBar.el_.style.top = "-"+(plugin.options.NumAnnotations+2+'em');
 		plugin.BackAnDisplayScroll.el_.children[0].style.top = "-"+(plugin.options.NumAnnotations+4+'em');
+		plugin.backDSTime.el_.children[0].style.top = "-"+(plugin.options.NumAnnotations+4+'em');
 	}
-	if (player.techName == 'Youtube')
-		player.one('play', initialVideoFinished);
-	else
-		player.one('durationchange', initialVideoFinished);
-	
+	player.one('loadedRangeSlider', initialVideoFinished);//Loaded RangeSlider
 	
 	console.log("Loaded Annotation Plugin");
 }
@@ -281,6 +277,7 @@ vjsAnnotation.prototype = {
 		this.BackAnDisplayScroll = this.components.BackAnDisplayScroll = controlBar.BackAnDisplayScroll;//Back Panel with all the annotations
 		this.backDSBar = this.components.BackAnDisplayScrollBar = this.BackAnDisplayScroll.BackAnDisplayScrollBar;//Scroll Bar
 		this.backDSBarSel = this.components.ScrollBarSelector = this.backDSBar.ScrollBarSelector;//Scroll Bar Selector
+		this.backDSTime = this.components.BackAnDisplayScrollTime = this.BackAnDisplayScroll.BackAnDisplayScrollTime;//Back Panel with time of the annotations in the scroll
 		this.rsd = this.components.RangeSelectorDisplay = controlBar.BackAnDisplay.RangeSelectorDisplay;//Selection the time to display the annotations
 		this.rsdl = this.components.RangeSelectorLeft = this.rsd.RangeSelectorLeft;
 		this.rsdr = this.components.RangeSelectorRight = this.rsd.RangeSelectorRight;
@@ -474,6 +471,8 @@ vjsAnnotation.prototype = {
 				an.highlights[0].children[0].style.marginTop = '';
 			}
 		}
+		//Set the times in the scroll time panel
+		this.backDSTime.setTimes();
 	},
 	setposBigNew: function(pos){
 		var pos = pos || 'ul',
@@ -976,7 +975,7 @@ videojs.RangeSelectorDisplay.prototype.updateRight = function(right) {
 		return true;
 	}
 	return false;
-};
+};		
 
 
 
@@ -1332,6 +1331,20 @@ videojs.AnDisplay.prototype.onCloseViewer = function(){
 };
 
 
+videojs.AnDisplay.prototype.countVisibles = function() {
+	var AnArray = $.makeArray(this.el_.children);
+	//Count visible annotations in Panel
+	var count = 0;
+	for (var index in AnArray){
+		var an = AnArray[index];
+		if (an.style.display!='none'){
+			count++;
+		}
+	}
+	return count;
+};
+
+
 
 //-- Player--> ControlBar--> BackAnDisplayScroll
 
@@ -1383,6 +1396,7 @@ videojs.BackAnDisplayScroll.prototype.init_ = function(){
 videojs.BackAnDisplayScroll.prototype.options_ = {
 	children: {
 		'BackAnDisplayScrollBar': {},
+		'BackAnDisplayScrollTime': {},
 	}
 };
 
@@ -1409,7 +1423,8 @@ videojs.BackAnDisplayScroll.prototype.onMouseDown = function(event){
 		videojs.on(document, "mouseup", videojs.bind(this,this.onMouseUp));
 		if(this.mousedownID==-1)  //Prevent multimple loops!
 			this.mousedownID = setInterval(function () {
-				self.an.backDSBarSel.setPosition(self.getPercentScroll()+direction);
+				var pos = Math.max(0,Math.min(1,self.getPercentScroll()+direction));
+				self.an.backDSBarSel.setPosition(pos);
 			},100);
 	}
 };
@@ -1434,7 +1449,7 @@ videojs.BackAnDisplayScroll.prototype.setPercentScroll = function(percent){
 	var scroll = this.an.AnDisplay.el_,
 		maxscroll = scroll.scrollHeight-scroll.offsetHeight;
 	percent = Math.max(0, Math.min(1, percent?percent:0));
-	scroll.scrollTop = (maxscroll*percent);
+	scroll.scrollTop = Math.round(maxscroll*percent);
 };
 
 
@@ -1455,10 +1470,7 @@ videojs.BackAnDisplayScrollBar = videojs.Component.extend({
 	}
 });
 
-videojs.BackAnDisplayScrollBar.prototype.init_ = function(){
-	this.rs = this.player_.rangeslider;
-	this.an = this.player_.annotations;
-};
+videojs.BackAnDisplayScrollBar.prototype.init_ = function(){};
 
 videojs.BackAnDisplayScrollBar.prototype.options_ = {
 	children: {
@@ -1567,6 +1579,10 @@ videojs.ScrollBarSelector.prototype.setPosition = function(top,showBar){
 	// Check for invalid position
 	if(isNaN(top)) 
 		return false;
+	
+	//Check if there is enough annotations to scroll
+	if(!this.isScrollable())
+		return false;
 		
 	// Show the Scrollbar
 	if(showBar){
@@ -1575,10 +1591,14 @@ videojs.ScrollBarSelector.prototype.setPosition = function(top,showBar){
 	
 	// Alias
 	var Obj = this.el_,
-		scroll = this.an.BackAnDisplayScroll;
+		scroll = this.an.BackAnDisplayScroll,
+		scrollTime = this.an.backDSTime;
 	
 	Obj.style.top = (this.parseMaxHeight(top) * 100) + '%';
 	scroll.setPercentScroll(top);
+	
+	//Set the times in the scroll time panel
+	scrollTime.setTimes();
 	
 	//Hide the Scrollbar in 1 sec
 	if(showBar){
@@ -1595,6 +1615,112 @@ videojs.ScrollBarSelector.prototype.setPosition = function(top,showBar){
 	return true;
 }
 
+videojs.ScrollBarSelector.prototype.isScrollable = function(){
+	var scroll = this.an.AnDisplay.el_,
+		emtoPx = parseFloat($(scroll).find('.annotation').css('height')),
+		minTop = parseInt(scroll.offsetHeight/emtoPx);
+	
+	//Count visible annotations in Panel
+	var count = this.an.AnDisplay.countVisibles();
+	return (count>minTop);
+}
+
+
+
+//-- Player--> ControlBar--> BackAnDisplayScroll--> BackAnDisplayScrollTime
+
+videojs.BackAnDisplayScrollTime = videojs.Component.extend({
+  	/** @constructor */
+	init: function(player, options){
+		videojs.Component.call(this, player, options);
+	}
+});
+
+videojs.BackAnDisplayScrollTime.prototype.init_ = function(){
+	this.rs = this.player_.rangeslider;
+	this.an = this.player_.annotations;
+};
+
+videojs.BackAnDisplayScrollTime.prototype.createEl = function(){
+  return videojs.Component.prototype.createEl.call(this, 'div', {
+    className: 'vjs-scrolltime-anpanel-annotation',
+    innerHTML: '<div class="vjs-up-scrolltime-annotation"><span class="vjs-time-text">Aug 22, 2003 00:00</span></div><div class="vjs-down-scrolltime-annotation"><span class="vjs-time-text">Aug 22, 2003 00:00</span></div>',
+  });
+};
+
+videojs.BackAnDisplayScrollTime.prototype.setTimes = function(){
+	var AnPos = this.getAnnotationPosition(),
+		AnEl = this.getElements(AnPos),
+		AnTimes = this.getTimes(AnEl);
+	$(this.el_).find('.vjs-up-scrolltime-annotation span')[0].innerHTML = AnTimes.top;
+	$(this.el_).find('.vjs-down-scrolltime-annotation span')[0].innerHTML = AnTimes.bottom;
+};
+
+videojs.BackAnDisplayScrollTime.prototype.getAnnotationPosition = function(){
+	var backDSBarSel = this.an.backDSBarSel,
+		percent = backDSBarSel.parseMaxPercent(parseFloat(backDSBarSel.el_.style.top)/100),
+		scroll = this.an.AnDisplay.el_,
+		maxTop = scroll.scrollHeight,
+		minTop = scroll.offsetHeight,
+		maxBottom = maxTop-minTop,
+		minBottom = 0,
+		pos = {};
+	percent = percent || 0;
+	pos.top = Math.max(minTop, Math.min(maxTop,maxBottom*percent+scroll.offsetHeight));
+	pos.bottom = Math.max(minBottom, Math.min(maxBottom,maxBottom*percent));
+	return pos;
+};
+
+videojs.BackAnDisplayScrollTime.prototype.getElements = function(AnPos){
+	var AnPos = AnPos || {},
+		scroll = this.an.AnDisplay.el_,
+		emtoPx = parseFloat($(scroll).find('.annotation').css('height')),
+		maxTop = parseInt(scroll.scrollHeight/emtoPx),
+		minTop = parseInt(scroll.offsetHeight/emtoPx),
+		maxBottom = (maxTop-minTop),
+		minBottom = 0,
+		AnEl = {};
+	AnEl.top = Math.max(minTop, Math.min(maxTop,parseInt(AnPos.top/emtoPx)));
+	AnEl.bottom = Math.max(minBottom, Math.min(maxBottom,parseInt(AnPos.bottom/emtoPx)));
+	return AnEl;
+};
+
+videojs.BackAnDisplayScrollTime.prototype.getTimes = function(AnEl){
+	var AnEl = AnEl || {}, 
+		AnTimes = {},
+		TopEl, BottomEl, AnTop, AnBottom,
+		AnArray = $.makeArray(this.an.AnDisplay.el_.children);
+	AnEl.top = AnEl.top || 0;
+	AnEl.bottom = AnEl.bottom || 0;
+	
+	//Get HTML Elements
+	var count = 0, lastEl;
+	for (var index in AnArray){
+		var an = AnArray[index];
+		if (an.style.display!='none'){
+			if(count == AnEl.bottom){
+				TopEl = an;
+			}else if(count == AnEl.top){
+				BottomEl = an;
+			}
+			lastEl = an;
+			count++;
+		}
+	}
+	if (typeof BottomEl=='undefined')
+		BottomEl = lastEl;
+		
+	//Annotation Element
+	AnTop = $.data(TopEl, 'annotation');
+	AnBottom = $.data(BottomEl, 'annotation');
+	//Update of the element
+	AnTimes.top = (typeof AnTop!='undefined' && typeof AnTop.updated!='undefined')?AnTop.updated:'';
+	AnTimes.bottom = (typeof AnBottom!='undefined' && typeof AnBottom.updated!='undefined')?AnBottom.updated:'';
+	//Format
+	AnTimes.top = new Date(AnTimes.top!=''?createDateFromISO8601(AnTimes.top):'');
+	AnTimes.bottom = new Date(AnTimes.bottom!=''?createDateFromISO8601(AnTimes.bottom):'');
+	return AnTimes;
+};
 
 
 })();

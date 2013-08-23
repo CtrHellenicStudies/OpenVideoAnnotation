@@ -153,7 +153,8 @@ div.video-js:hover > div.vjs-big-new-annotation {
 	position:absolute;
 	background-color: rgba(0,0,0,0.3);
 	width: auto;
-	font-size: .3em;
+	/*font-size: .3em;*/
+	font-size: .9em;
 	-webkit-transition: top .4s,height .4s,font-size .4s,-webkit-transform .4s;
 	-moz-transition: top .4s,height .4s,font-size .4s,-moz-transform .4s;
 	-o-transition: top .4s,height .4s,font-size .4s,-o-transform .4s;
@@ -229,7 +230,7 @@ div.video-js:hover > div.vjs-big-new-annotation {
 	height: 100%;
 	width: 100%;
 	position:absolute;
-	background-color: rgba(0,0,0,0.4);
+	background-color: rgba(0,0,0,0.6);
 }
 .vjs-default-skin .vjs-selector-arrow{
 	width: 0;
@@ -245,8 +246,8 @@ div.video-js:hover > div.vjs-big-new-annotation {
 .vjs-default-skin .vjs-barselector-anpanel-annotation{
 	height: 2em;
 	margin-top: -1em;
-	background-color: rgba(0,0,0,0.4);
-	border: 1px solid rgba(255,255,255,0.4);
+	background-color: rgba(0,0,0,0.6);
+	border: 1px solid rgba(255,255,255,0.6);
 	position: absolute;
 	float: left;
 	visibility:visible;
@@ -274,7 +275,9 @@ div.video-js:hover > div.vjs-big-new-annotation {
 	font-size: 1.3em;
 	position: absolute;
 }
-
+.vjs-default-skin .vjs-rangeselector-anpanel-annotation.active .vjs-barselector-anpanel-annotation{
+	z-index: 1;
+}
 
 /* --- ControlBar --> BackAnDisplay --> AnDisplay --- */
 
@@ -387,7 +390,8 @@ div.video-js:hover > div.vjs-big-new-annotation {
 	cursor: pointer;
 	border-left: 1em solid transparent;
 	border-right: 1em solid transparent;
-	font-size: .3em;
+	/*font-size: .3em;*/
+	font-size: .9em;
 	-webkit-transition: top .4s,height .4s,font-size .4s,-webkit-transform .4s;
 	-moz-transition: top .4s,height .4s,font-size .4s,-moz-transform .4s;
 	-o-transition: top .4s,height .4s,font-size .4s,-o-transform .4s;
@@ -435,7 +439,8 @@ div.video-js:hover > div.vjs-big-new-annotation {
 	cursor: pointer;
 	right: 0.7em;
 	width: 0.5em;
-	font-size: .3em;
+	/*font-size: .3em;*/
+	font-size: .9em;
 	background-color: black;
 	opacity: 0.8;
 	visibility:visible;
@@ -473,6 +478,34 @@ div.video-js:hover > div.vjs-big-new-annotation {
 	border-radius: 1em;
 	left: -0.75em;
 }
+
+
+
+/* --- ControlBar --> BackAnDisplay --> BackAnDisplayScroll--> BackAnDisplayScrollTime --- */
+.vjs-default-skin .vjs-down-scrolltime-annotation,
+.vjs-default-skin .vjs-up-scrolltime-annotation{
+	width: 100%;
+	height:2em;
+	float: left;
+	right: 0em;
+	position:absolute;
+	font-size: .9em;
+	opacity: 0.8;
+	visibility:visible;
+	transition-delay:0s;
+	right: 3em;
+	text-align: right;
+}
+
+.vjs-default-skin .vjs-down-scrolltime-annotation{
+	top: -2em;
+	margin-top: -0.2em;
+}
+
+.vjs-default-skin .vjs-scrolltime-anpanel-annotation span{
+	font-size: 1.3em;
+}
+
 
 
 /* ---------------- Modify the CSS of Annotator plugin ---------------- */
