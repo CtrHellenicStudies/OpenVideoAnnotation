@@ -84,6 +84,7 @@ posBigNew (options):
 * bl (below left) 
 * br (below right)
 * c  (center)
+* none  (without button)
 
 NumAnnotations: it is the number of Annotation that will be load in the display. The other annotation will be hide under the scroll. (By default: 16)
 
