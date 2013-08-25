@@ -163,6 +163,7 @@ Set the position of the new big annotation button. The values for the inlet posi
 * bl (below left) 
 * br (below right)
 * c  (center)
+* none  (without button)
 
 ```js
 	ova.setposBigNew('divID',position);
