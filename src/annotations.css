@@ -374,6 +374,10 @@ div.video-js:hover > div.vjs-big-new-annotation.none {
 	z-index: 1;
 }
 
+.vjs-default-skin .vjs-back-anpanel-annotation.statistics .vjs-anpanel-annotation{
+	visibility:hidden;
+}
+
 
 
 /* --- ControlBar --> BackAnDisplay --> AnStat --- */
@@ -385,7 +389,6 @@ div.video-js:hover > div.vjs-big-new-annotation.none {
 	right: 0em;
 	position: absolute;
 	opacity: 0.8;
-	background: white;
 	visibility:visible;
 	transition-delay:0s;
 }
@@ -394,8 +397,10 @@ div.video-js:hover > div.vjs-big-new-annotation.none {
 	visibility:hidden;
 	opacity:0;
 }
-
-.vjs-default-skin .vjs-char-anstat-annotation{
+.vjs-default-skin .vjs-number-anstat-annotation{
+	text-align:center;
+	width: 100%;
+	font-size: 1.2em;
 }
 
 
