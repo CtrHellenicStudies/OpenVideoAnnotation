@@ -2008,10 +2008,13 @@ Annotator.Plugin.VideoJS = (function(_super) {
 			annotation.rangeTime.end = time.end || 0; // - rangeTime.end
 			annotation.updated = new Date().toISOString(); // - updated
 			if (typeof annotation.created == 'undefined')
-				annotation.created = new Date().toISOString(); // - created
+				annotation.created = annotation.updated; // - created
 		}else{
 			if (typeof annotation.media == 'undefined')
 				annotation.media = "text"; // - media
+			annotation.updated = new Date().toISOString(); // - updated
+			if (typeof annotation.created == 'undefined')
+				annotation.created = annotation.updated; // - created
 		}
 		return annotation.media;
 	};
@@ -2244,6 +2247,7 @@ OpenVideoAnnotation.Annotator = function (element, options) {
 	this.annotator.addPlugin("Permissions", options.optionsAnnotator.user);
 	this.annotator.addPlugin("Store", options.optionsAnnotator.store);
 	this.annotator.addPlugin("Tags");
+	this.annotator.addPlugin("Geolocation");
 	this.annotator.addPlugin("Share");
 	this.annotator.addPlugin("VideoJS");
 	//Will be add the player and the annotations plugin for video-js in the annotator
