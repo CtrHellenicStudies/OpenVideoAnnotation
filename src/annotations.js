@@ -363,7 +363,9 @@ vjsAnnotation.prototype = {
 		var isVideo = this._isVideoJS(annotation);
 		if (isVideo){
 			var start = annotation.rangeTime.start,
-				end = annotation.rangeTime.end;
+				end = annotation.rangeTime.end,
+				duration = this.player.duration(),
+				isPoint = videojs.round(start,3)==videojs.round(end,3);
 			
 			this._reset();
 		
@@ -377,10 +379,15 @@ vjsAnnotation.prototype = {
 			this.rs.lock();
 		
 			//play
-			this.rs.playBetween(start,end);
-		
+			if(!isPoint)
+				this.rs.playBetween(start,end);
+				
+			//fix small bar
+			var width = Math.min(1, Math.max(0.005, (this.rs._percent(end-start))))*100;
+			this.rs.bar.el_.style.width = width+'%';
+				
 			//Add the annotation object to the bar 
-			var bar = this.rs.bar.el_,
+			var bar = isPoint?this.rs[((duration-start)/duration<0.1)?'left':'right'].el_:this.rs.bar.el_,
 				holder = $(this.rs.left.el_).parent()[0];
 			$(holder).append('<span class="annotator-hl"></div>');
 			$(bar).appendTo( $(holder).find('.annotator-hl'));
@@ -401,11 +408,14 @@ vjsAnnotation.prototype = {
 		this.rs.showPanel();
 		
 		//remove the last single showed annotation
-		var bar = this.rs.bar.el_,
-			holder = $(this.rs.left.el_).parent()[0];
+		var holder = $(this.rs.left.el_).parent()[0];
+		var holderRight = $(this.rs.right.el_).parent()[0];
 		if ($(holder).find('.annotator-hl').length > 0){
-			$(bar).appendTo(holder);
+			$($(holder).find('.annotator-hl')[0].children[0]).appendTo(holder);
 			$(holder).find('.annotator-hl').remove();
+		}else if ($(holderRight).find('.annotator-hl').length > 0){
+			$($(holderRight).find('.annotator-hl')[0].children[0]).appendTo(holderRight);
+			$(holderRight).find('.annotator-hl').remove();
 		}
 	},
 	editAnnotation: function(annotation,editor){
@@ -455,7 +465,7 @@ vjsAnnotation.prototype = {
 					width;
 				span.appendChild(div);
 				span.className = "annotator-hl";
-				width = Math.min(100, Math.max(0, end - start));
+				width = Math.min(100, Math.max(0.2, end - start));
 				div.className = "annotation";
 				div.id = count;
 				div.style.top = count+"em";
@@ -464,6 +474,12 @@ vjsAnnotation.prototype = {
 				div.start = an.rangeTime.start;
 				div.end = an.rangeTime.end;
 				this.AnDisplay.el_.appendChild(span);
+				
+				//detect point annotations
+				if(videojs.round(start,0)==videojs.round(end,0)){
+					$(div).css('width','');
+					$(div).addClass("point");
+				}
 				
 				//Set the object in the div
 				$.data(span, 'annotation', an);
@@ -1299,9 +1315,10 @@ videojs.AnDisplay.prototype.onMouseDown = function(event){
 		var boxup = document.createElement('div'),
 			ElemTop = parseFloat(elem[1].style.top),
 			ElemMargin = parseFloat(elem[1].style.marginTop),
-			emtoPx = parseFloat($(elem[1]).css('height'));
+			emtoPx = parseFloat($(elem[1]).css('height')),
+			isPoint = $(elem[1]).hasClass("point");
 			
-		boxup.className = "boxup-dashed-line";
+		boxup.className = isPoint?"boxup-dashed-line point":"boxup-dashed-line";
 		boxup.style.left = elem[1].style.left;
 		boxup.style.width = elem[1].style.width;
 	
@@ -1362,11 +1379,12 @@ videojs.AnDisplay.prototype.onMouseOver = function(event){
 				DisplayHeight = parseFloat(this.an.BackAnDisplay.el_.style.height),
 				ElemMarginTop = elem[1].style.marginTop!=''?parseFloat(elem[1].style.marginTop):0;
 				ElemTop = parseFloat(elem[1].style.top)+ElemMarginTop,
-				emtoPx = parseFloat($(elem[1]).css('height'));
-			dashed.className = "dashed-line";
+				emtoPx = parseFloat($(elem[1]).css('height')),
+				isPoint = $(elem[1]).hasClass("point");
+			dashed.className = isPoint?'dashed-line point':'dashed-line';
 			boxdown.className = "box-dashed-line";
 			dashed.style.left = boxdown.style.left = elem[1].style.left;
-			dashed.style.width = boxdown.style.width = elem[1].style.width;
+			dashed.style.width = boxdown.style.width = isPoint?'0':elem[1].style.width;
 			dashed.style.top = ((ElemTop+1)-this.el_.scrollTop/emtoPx)+'em';
 			dashed.style.height = ((DisplayHeight-ElemTop+1)+this.el_.scrollTop/emtoPx)+'em';//get the absolute value of the top to put in the height
 			boxdown.style.top = (DisplayHeight+1)+'em';
@@ -1427,8 +1445,8 @@ videojs.AnStat = videojs.Component.extend({
 	/** @constructor */
 	init: function(player, options){
 		videojs.Component.call(this, player, options);
-		this.marginTop = 0;
-		this.marginBottom = 20;
+		this.marginTop = 20;
+		this.marginBottom = 0;
 	}
 });
 
@@ -1450,16 +1468,19 @@ videojs.AnStat.prototype.paintCanvas = function(){
 		points = this._getPoints(),
 		w = this._getWeights(points),
 		maxEn = this._getMaxArray(points,'entries'),
+		TotAn = this.an.AnDisplay.el_.children.length;
 		duration = this.an.player.duration();
-	
+		
 	//set the position of the canvas
 	this.canvas.style.marginTop = Math.round(this.marginTop)+'px';
 	
-	//Add the Max number of annotations
-	$(this.canvas).parent().append('<div class="vjs-number-anstat-annotation">');
-	var textCanvas = $(this.canvas).parent().find('.vjs-number-anstat-annotation')[0];
-	textCanvas.style.height = this.marginBottom+'px';
-	textCanvas.innerHTML = 'Max Number of Annotations = '+maxEn;
+	//Add the Max Concentration and Number of annotations
+	$(this.canvas).parent().append('<div class="vjs-totan-anstat-annotation">');
+	var textCanvas = $(this.canvas).parent().find('.vjs-totan-anstat-annotation')[0];
+	textCanvas.innerHTML = TotAn+' total annotations';
+	$(this.canvas).parent().append('<div class="vjs-maxcon-anstat-annotation">');
+	var textCanvas = $(this.canvas).parent().find('.vjs-maxcon-anstat-annotation')[0];
+	textCanvas.innerHTML = 'Max Annotations = '+maxEn;
 	
 	//Added dashed line function to paint
 	if (window.CanvasRenderingContext2D && CanvasRenderingContext2D.prototype.lineTo) {
@@ -1498,11 +1519,19 @@ videojs.AnStat.prototype.paintCanvas = function(){
 	var lastSe = 0, lastEn = 0;
 	ctx.moveTo(0,maxEn*w.Y); //Move pointer to 0,0
 	for (var index in points){
-		var p = points[index];
-		ctx.lineTo(p.second*w.X,(maxEn-lastEn)*w.Y); //move horizontally to the new point
-		ctx.moveTo(p.second*w.X,(maxEn-lastEn)*w.Y); //Move pointer
-		ctx.lineTo(p.second*w.X,(maxEn-p.entries)*w.Y); //move vertically to the new point height
-		ctx.moveTo(p.second*w.X,(maxEn-p.entries)*w.Y); //Prepare pointer for a new instance
+		var p = points[index],
+			x1 =lastSe*w.X, y1 =(maxEn-lastEn)*w.Y, // Old Point
+			x2 =p.second*w.X, y2 =(maxEn-p.entries)*w.Y; // New Point
+		//new line
+		ctx.lineTo(x2,y1); //move horizontally to the new point
+		ctx.moveTo(x2,y1); //Move pointer
+		ctx.lineTo(x2,y2); //move vertically to the new point height
+		ctx.moveTo(x2,y2); //Prepare pointer for a new instance
+		//new rectangle under the curve
+		ctx.fillStyle="rgba(0, 0, 0,0.5)";
+		ctx.fillRect(x1,y1,(x2-x1),(maxEn*w.Y-y1));
+		
+		//store the last point
 		lastSe = p.second;
 		lastEn = p.entries;
 	}

@@ -374,6 +374,13 @@ div.video-js:hover > div.vjs-big-new-annotation.none {
 	z-index: 1;
 }
 
+.vjs-default-skin .vjs-anpanel-annotation .annotation.point {
+	border-radius: 50%;
+	width: 1em;
+	height: 1em;
+	margin-left: -0.4em;
+}
+
 .vjs-default-skin .vjs-back-anpanel-annotation.statistics .vjs-anpanel-annotation{
 	visibility:hidden;
 }
@@ -391,16 +398,30 @@ div.video-js:hover > div.vjs-big-new-annotation.none {
 	opacity: 0.8;
 	visibility:visible;
 	transition-delay:0s;
+	font-size: 1.2em;
 }
 
 .vjs-default-skin .vjs-anstat-annotation.disable{
 	visibility:hidden;
 	opacity:0;
 }
-.vjs-default-skin .vjs-number-anstat-annotation{
-	text-align:center;
-	width: 100%;
-	font-size: 1.2em;
+
+.vjs-default-skin .vjs-totan-anstat-annotation,
+.vjs-default-skin .vjs-maxcon-anstat-annotation{
+	position: absolute;
+	top: 0.1em;
+	background-color: rgba(0,0,0,0.5);
+	border-radius: 0.5em;
+	padding: 0.1em;
+	color: rgb(255, 163, 0);
+}
+.vjs-default-skin .vjs-totan-anstat-annotation{
+	float: right;
+	right:1em;
+}
+.vjs-default-skin .vjs-maxcon-anstat-annotation{
+	float: left;
+	left:1em;
 }
 
 
@@ -416,6 +437,10 @@ div.video-js:hover > div.vjs-big-new-annotation.none {
 	border-right:0.23em dashed #2DCF02;
 	opacity: 0.8;
 }
+.vjs-default-skin .dashed-line.point{
+	border-right:0;
+}
+
 .vjs-default-skin .box-dashed-line{
 	height: 1em;
 	float: left;
@@ -445,6 +470,13 @@ div.video-js:hover > div.vjs-big-new-annotation.none {
 	-moz-transition: top 1s,-moz-transform .4s;
 	-o-transition: top 1s,-o-transform .4s;
 	transition: top 1s,transform .4s;
+}
+
+.vjs-default-skin .boxup-dashed-line.point{
+	border-radius: 50%;
+	width: 1em;
+	height: 1em;
+	margin-left: -0.4em;
 }
 
 
