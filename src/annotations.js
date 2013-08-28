@@ -234,9 +234,9 @@ function vjsAnnotation_(options){
 		
 		//set the number of Annotations to display
 		plugin.BackAnDisplay.el_.style.height = plugin.backDSBar.el_.style.height = (plugin.options.NumAnnotations+'em');
-		plugin.BackAnDisplay.el_.style.top = plugin.backDSBar.el_.style.top = "-"+(plugin.options.NumAnnotations+2+'em');
-		plugin.BackAnDisplayScroll.el_.children[0].style.top = "-"+(plugin.options.NumAnnotations+4+'em');
-		plugin.backDSTime.el_.children[0].style.top = "-"+(plugin.options.NumAnnotations+4+'em');
+		plugin.BackAnDisplay.el_.style.top = plugin.backDSBar.el_.style.top = "-"+(plugin.options.NumAnnotations+3+'em');
+		plugin.BackAnDisplayScroll.el_.children[0].style.top = "-"+(plugin.options.NumAnnotations+5+'em');
+		plugin.backDSTime.el_.children[0].style.top = "-"+(plugin.options.NumAnnotations+5+'em');
 	}
 	player.one('loadedRangeSlider', initialVideoFinished);//Loaded RangeSlider
 	
@@ -651,8 +651,9 @@ vjsAnnotation.prototype = {
 			isSource = false;
 			if(isContainer){
 				//Compare without extension
-				var targetSrc = an.target.src.substring(0,an.target.src.lastIndexOf(".")),
-					playerSrc = player.options_.sources[0].src.substring(0,player.options_.sources[0].src.lastIndexOf("."));
+				var isYoutube = (isOpenVideojs && typeof this.player.techName!='undefined')?(this.player.techName == 'Youtube'):false,
+					targetSrc = isYoutube?an.target.src:an.target.src.substring(0,an.target.src.lastIndexOf(".")),
+					playerSrc = isYoutube?player.options_.sources[0].src:player.options_.sources[0].src.substring(0,player.options_.sources[0].src.lastIndexOf("."));
 				isSource = (targetSrc == playerSrc);
 			}
 		return (isOpenVideojs && isVideo && isContainer && isSource && isNumber);
@@ -1386,8 +1387,8 @@ videojs.AnDisplay.prototype.onMouseOver = function(event){
 			dashed.style.left = boxdown.style.left = elem[1].style.left;
 			dashed.style.width = boxdown.style.width = isPoint?'0':elem[1].style.width;
 			dashed.style.top = ((ElemTop+1)-this.el_.scrollTop/emtoPx)+'em';
-			dashed.style.height = ((DisplayHeight-ElemTop+1)+this.el_.scrollTop/emtoPx)+'em';//get the absolute value of the top to put in the height
-			boxdown.style.top = (DisplayHeight+1)+'em';
+			dashed.style.height = ((DisplayHeight-ElemTop+2)+this.el_.scrollTop/emtoPx)+'em';//get the absolute value of the top to put in the height
+			boxdown.style.top = (DisplayHeight+2)+'em';
 			elem[0].parentNode.parentNode.appendChild(dashed);
 			elem[0].parentNode.parentNode.appendChild(boxdown);
 			
@@ -2078,12 +2079,14 @@ Annotator.Plugin.VideoJS = (function(_super) {
 				player = this.annotator.mplayer[index],
 				rs = player.rangeslider,
 				time = rs.getValues(),
-				ext;
+				ext,
+				isYoutube = (player && typeof player.techName!='undefined')?(player.techName == 'Youtube'):false;
 			annotation.media = "video"; // - media
 			annotation.target = annotation.target || {}; // - target
 			annotation.target.container = player.id_ || ""; // - target.container
 			annotation.target.src = player.options_.sources[0].src || ""; // - target.src (media source)
 			ext = (player.options_.sources[0].src.substring(player.options_.sources[0].src.lastIndexOf("."))).toLowerCase(); 
+			ext = isYoutube?'Youtube':ext; //The extension for youtube
 			annotation.target.ext = ext || ""; // - target.ext (extension)
 			annotation.rangeTime = 	annotation.rangeTime || {};	// - rangeTime
 			annotation.rangeTime.start = time.start || 0; // - rangeTime.start

@@ -409,7 +409,7 @@ div.video-js:hover > div.vjs-big-new-annotation.none {
 .vjs-default-skin .vjs-totan-anstat-annotation,
 .vjs-default-skin .vjs-maxcon-anstat-annotation{
 	position: absolute;
-	top: 0.1em;
+	top: 0.3em;
 	background-color: rgba(0,0,0,0.5);
 	border-radius: 0.5em;
 	padding: 0.1em;
@@ -508,7 +508,7 @@ div.video-js:hover > div.vjs-big-new-annotation.none {
 }
 
 .vjs-default-skin .vjs-down-scroll-annotation{
-	top: -2em;
+	top: -3em;
 	border-top: 1em solid black;
 }
 .vjs-default-skin .vjs-scroll-anpanel-annotation.disable,
@@ -539,8 +539,8 @@ div.video-js:hover > div.vjs-big-new-annotation.none {
 	float: left;
 	position: absolute;
 	cursor: pointer;
-	right: 0.7em;
-	width: 0.5em;
+	right: 0.5em;
+	width: 1em;
 	/*font-size: .3em;*/
 	font-size: .9em;
 	background-color: black;
@@ -572,13 +572,12 @@ div.video-js:hover > div.vjs-big-new-annotation.none {
 }
 
 .vjs-default-skin .vjs-scrollbar-selector{
-	width: 2em;
+	width: 1em;
 	background-color: gray;
 	border: 1px solid black;
 	position:absolute;
 	height: 3em;
-	border-radius: 1em;
-	left: -0.75em;
+	border-radius: 0.4em;
 }
 
 
@@ -595,10 +594,11 @@ div.video-js:hover > div.vjs-big-new-annotation.none {
 	transition-delay:0s;
 	right: 3em;
 	text-align: right;
+	margin-top:0.2em;
 }
 
 .vjs-default-skin .vjs-down-scrolltime-annotation{
-	top: -2.1em;
+	top: -2.6em;
 	margin-top: -0.2em;
 }
 
@@ -608,6 +608,8 @@ div.video-js:hover > div.vjs-big-new-annotation.none {
 	border-radius: 0.5em;
 	padding: 0.1em;
 	border: 0.1em solid white;
+	padding-left: 0.4em;
+	padding-right: 0.4em;
 }
 
 
