@@ -720,7 +720,8 @@ videojs.BigNewAnnotation.prototype.init_ = function(){
 videojs.BigNewAnnotation.prototype.createEl = function(){
 	return videojs.Button.prototype.createEl.call(this, 'div', {
 		className: 'vjs-big-new-annotation vjs-menu-button vjs-control',
-		innerHTML: '<div class="vjs-big-menu-button vjs-control">A</div>'
+		innerHTML: '<div class="vjs-big-menu-button vjs-control">A</div>',
+		title: 'New Annotation',
 	});
 };
 
@@ -788,6 +789,7 @@ videojs.ShowStatistics.prototype.init_ = function(){
 videojs.ShowStatistics.prototype.createEl = function(){
 	return videojs.Button.prototype.createEl.call(this, 'div', {
 		className: 'vjs-statistics-annotation vjs-menu-button vjs-control',
+		title: 'Show the Statistics',
 	});
 };
 
@@ -821,6 +823,7 @@ videojs.ShowAnnotations.prototype.init_ = function(){
 videojs.ShowAnnotations.prototype.createEl = function(){
 	return videojs.Button.prototype.createEl.call(this, 'div', {
 		className: 'vjs-showannotations-annotation vjs-menu-button vjs-control',
+		title: 'Show Annotations',
 	});
 };
 
@@ -853,6 +856,7 @@ videojs.NewAnnotation.prototype.init_ = function(){
 videojs.NewAnnotation.prototype.createEl = function(){
 	return videojs.Button.prototype.createEl.call(this, 'div', {
 		className: 'vjs-new-annotation vjs-menu-button vjs-control',
+		title: 'New Annotation',
 	});
 };
 
@@ -1137,7 +1141,7 @@ videojs.RangeSelectorLeft.prototype.init_ = function(){
 videojs.RangeSelectorLeft.prototype.createEl = function(){
 	return videojs.Component.prototype.createEl.call(this, 'div', {
 		className: 'vjs-leftselector-anpanel-annotation',
-		innerHTML: '<div class="vjs-selector-arrow"></div><div class="vjs-leftselector-back"></div>'
+		innerHTML: '<div class="vjs-selector-arrow" title="Left Annotation Selector"></div><div class="vjs-leftselector-back"></div>'
 	});
 };
 
@@ -1201,7 +1205,7 @@ videojs.RangeSelectorRight.prototype.init_ = function(){
 videojs.RangeSelectorRight.prototype.createEl = function(){
 	return videojs.Component.prototype.createEl.call(this, 'div', {
 		className: 'vjs-rightselector-anpanel-annotation',
-		innerHTML: '<div class="vjs-selector-arrow"></div><div class="vjs-rightselector-back"></div>'
+		innerHTML: '<div class="vjs-selector-arrow" title="Right Annotation Selector"></div><div class="vjs-rightselector-back"></div>'
 	});
 };
 
@@ -1291,7 +1295,7 @@ videojs.RangeSelectorBarL.prototype.init_ = function(){};
 videojs.RangeSelectorBarL.prototype.createEl = function(){
 	return videojs.Component.prototype.createEl.call(this, 'div', {
 		className: 'vjs-barselector-left',
-		innerHTML: '<span class="vjs-time-text">00:00</span>'
+		innerHTML: '<span class="vjs-time-text">00:00</span>',
 	});
 };
 
@@ -2349,6 +2353,10 @@ OpenVideoAnnotation.Annotator = function (element, options) {
 			for (var index in mplayer){
 				if($(mplayer[index].el_).find(e.target).length)
 					focusedPlayer = mplayer[index].id_;
+					/* Could Fix keyboard Problem in full-screen mode
+					if ($(e.target).hasClass('vjs-fullscreen-control'))
+						mplayer[index].el_.webkitRequestFullScreen(Element.ALLOW_KEYBOARD_INPUT);
+					}*/
 			}
 			
 			//Enter if we change the focus between player or go out of the player
