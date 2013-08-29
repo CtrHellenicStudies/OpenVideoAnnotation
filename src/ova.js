@@ -280,10 +280,11 @@ vjsAnnotation.prototype = {
 		this.updatePrecision = 3;
 		
 		//Components and Quick Aliases
-		this.ShowSt = this.components.ShowStatistics = controlBar.ShowStatistics;
-		this.NewAn = this.components.NewAnnotation = controlBar.NewAnnotation;
 		this.BigNewAn = this.components.BigNewAnnotation = player.BigNewAnnotation;
-		this.ShowAn =this.components.ShowAnnotations = controlBar.ShowAnnotations;
+		this.AnConBut = this.components.AnContainerButtons = controlBar.AnContainerButtons;
+		this.ShowSt = this.components.ShowStatistics = this.AnConBut.ShowStatistics;
+		this.NewAn = this.components.NewAnnotation = this.AnConBut.NewAnnotation;
+		this.ShowAn =this.components.ShowAnnotations = this.AnConBut.ShowAnnotations;
 		this.BackAnDisplay = this.components.BackAnDisplay = controlBar.BackAnDisplay;//Background of the panel
 		this.AnDisplay = this.components.AnDisplay = controlBar.BackAnDisplay.AnDisplay;//Panel with all the annotations
 		this.AnStat = this.components.AnStat = controlBar.BackAnDisplay.AnStat;//Panel with statistics of the number of annotations
@@ -334,28 +335,41 @@ vjsAnnotation.prototype = {
 	},
 	showDisplay: function(){
 		this._reset();
-		this.BackAnDisplay.removeClass('disable');
-		this.BackAnDisplayScroll.removeClass('disable');
-		videojs.addClass(this.ShowAn.el_, 'active');
+		//show
+		this.BackAnDisplay.removeClass('disable');//show the Container
+		this.BackAnDisplayScroll.removeClass('disable');//show the scroll
+		//active button
+		this.ShowAn.addClass('active');
 		this.options.showDisplay =true;
 	},
 	hideDisplay: function(){
-		this.BackAnDisplay.addClass('disable');//close the display
-		this.BackAnDisplayScroll.addClass('disable');//close the display
+		//hide
+		this.BackAnDisplay.addClass('disable');//hide the Container
+		this.BackAnDisplayScroll.addClass('disable');//hide the scroll
+		//no active button
 		videojs.removeClass(this.ShowAn.el_, 'active');
 		this.options.showDisplay =false;
 	},
 	showStatistics: function(){
-		this.showDisplay();
+		this._reset();
+		//show
+		this.BackAnDisplay.removeClass('disable');//show the Container
+		this.AnStat.removeClass('disable');//show Statistics
+		//mode (this mode will hide the annotations to show the statistics in the container)
+		this.BackAnDisplay.addClass('statistics');//mode statistics 
+		//paint
 		this.AnStat.paintCanvas();//refresh canvas
-		this.BackAnDisplay.addClass('statistics');
-		this.AnStat.removeClass('disable');
+		//active button
 		this.ShowSt.addClass('active');
 		this.options.showStatistics =true;
 	},
 	hideStatistics: function(){
+		//hide
+		this.BackAnDisplay.addClass('disable');//hide the Container
+		this.AnStat.addClass('disable');//hide Statistics
+		//remove mode statistics
 		this.BackAnDisplay.removeClass('statistics');
-		this.AnStat.addClass('disable');
+		//no active button
 		this.ShowSt.removeClass('active');
 		this.options.showStatistics =false;
 	},
@@ -677,9 +691,7 @@ vjsAnnotation.prototype = {
 //----------------CREATE new Components for video-js----------------//
 
 //--Charge the new Component into videojs
-videojs.ControlBar.prototype.options_.children.ShowStatistics={}; //Button to show the chart with statistics
-videojs.ControlBar.prototype.options_.children.ShowAnnotations={}; //Button to show Annotations
-videojs.ControlBar.prototype.options_.children.NewAnnotation={}; //Button New Annotation
+videojs.ControlBar.prototype.options_.children.AnContainerButtons={}; //Container with the css for the buttons
 videojs.ControlBar.prototype.options_.children.BackAnDisplay={}; //Range Slider Time Bar
 videojs.ControlBar.prototype.options_.children.BackAnDisplayScroll={}; //Range Slider Time Bar
 videojs.options.children.BigNewAnnotation={}; //Big Button New Annotation
@@ -718,7 +730,42 @@ videojs.BigNewAnnotation.prototype.onClick = function(){
 
 
 
-//-- Player--> ControlBar--> ShowStatistics
+//-- Player--> ControlBar--> AnContainerButtons
+
+/**
+ * Container for the button CSS
+ * @param {videojs.Player|Object} player
+ * @param {Object=} options
+ * @constructor
+ */
+
+videojs.AnContainerButtons = videojs.Component.extend({
+	/** @constructor */
+	init: function(player, options){
+		videojs.Component.call(this, player, options);
+	}
+});
+
+videojs.AnContainerButtons.prototype.init_ = function(){};
+
+
+videojs.AnContainerButtons.prototype.options_ = {
+	children: {
+		'ShowStatistics': {},
+		'ShowAnnotations': {},
+		'NewAnnotation': {},
+	}
+};
+
+videojs.AnContainerButtons.prototype.createEl = function(){
+	return videojs.Component.prototype.createEl.call(this, 'div', {
+		className: 'vjs-container-button-annotation vjs-menu-button vjs-control',
+	});
+};
+
+
+
+//-- Player--> ControlBar--> AnContainerButtons--> ShowStatistics
 
 /**
  * Button for show/hide the chart with statistics of the annotation's number
@@ -728,10 +775,10 @@ videojs.BigNewAnnotation.prototype.onClick = function(){
  */
 
 videojs.ShowStatistics = videojs.Button.extend({
-  /** @constructor */
-  init: function(player, options){
-    videojs.Button.call(this, player, options);
-  }
+	/** @constructor */
+	init: function(player, options){
+		videojs.Button.call(this, player, options);
+	}
 });
 
 videojs.ShowStatistics.prototype.init_ = function(){
@@ -739,10 +786,9 @@ videojs.ShowStatistics.prototype.init_ = function(){
 };
 
 videojs.ShowStatistics.prototype.createEl = function(){
-  return videojs.Button.prototype.createEl.call(this, 'div', {
-    className: 'vjs-statistics-annotation vjs-menu-button vjs-control',
-    innerHTML: '<div class="vjs-menu-button vjs-control">C</div>'
-  });
+	return videojs.Button.prototype.createEl.call(this, 'div', {
+		className: 'vjs-statistics-annotation vjs-menu-button vjs-control',
+	});
 };
 
 videojs.ShowStatistics.prototype.onClick = function(){
@@ -752,7 +798,7 @@ videojs.ShowStatistics.prototype.onClick = function(){
 
 
 
-//-- Player--> ControlBar--> ShowAnnotations
+//-- Player--> ControlBar--> AnContainerButtons--> ShowAnnotations
 
 /**
  * Button for show/hide the annotation panel
@@ -773,10 +819,9 @@ videojs.ShowAnnotations.prototype.init_ = function(){
 };
 
 videojs.ShowAnnotations.prototype.createEl = function(){
-  return videojs.Button.prototype.createEl.call(this, 'div', {
-    className: 'vjs-showannotations-annotation vjs-menu-button vjs-control',
-    innerHTML: '<div class="vjs-menu-button vjs-control">S</div>'
-  });
+	return videojs.Button.prototype.createEl.call(this, 'div', {
+		className: 'vjs-showannotations-annotation vjs-menu-button vjs-control',
+	});
 };
 
 videojs.ShowAnnotations.prototype.onClick = function(){
@@ -786,7 +831,7 @@ videojs.ShowAnnotations.prototype.onClick = function(){
 
 
 
-//-- Player--> ControlBar--> NewAnnotation
+//-- Player--> ControlBar--> AnContainerButtons--> NewAnnotation
 
 /**
  * Create a New Annotation
@@ -826,10 +871,10 @@ videojs.NewAnnotation.prototype.onClick = function(){
  * @constructor
  */
 videojs.BackAnDisplay = videojs.Component.extend({
-  /** @constructor */
-  init: function(player, options){
-    videojs.Component.call(this, player, options);
-  }
+	/** @constructor */
+	init: function(player, options){
+		videojs.Component.call(this, player, options);
+	}
 });
 
 videojs.BackAnDisplay.prototype.init_ = function(){
@@ -851,9 +896,9 @@ videojs.BackAnDisplay.prototype.options_ = {
 };
 
 videojs.BackAnDisplay.prototype.createEl = function(){
-  return videojs.Component.prototype.createEl.call(this, 'div', {
-    className: 'vjs-back-anpanel-annotation',
-  });
+	return videojs.Component.prototype.createEl.call(this, 'div', {
+		className: 'vjs-back-anpanel-annotation',
+	});
 };
 
 
