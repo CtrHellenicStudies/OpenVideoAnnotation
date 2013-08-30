@@ -237,6 +237,16 @@ function vjsAnnotation_(options){
 		plugin.BackAnDisplay.el_.style.top = plugin.backDSBar.el_.style.top = "-"+(plugin.options.NumAnnotations+3+'em');
 		plugin.BackAnDisplayScroll.el_.children[0].style.top = "-"+(plugin.options.NumAnnotations+5+'em');
 		plugin.backDSTime.el_.children[0].style.top = "-"+(plugin.options.NumAnnotations+5+'em');
+		
+		//check full-screen change
+		player.on('fullscreenchange',function() {
+			if (player.isFullScreen) {
+				$(player.annotator.wrapper[0]).addClass('vjs-fullscreen');
+			} else {
+				$(player.annotator.wrapper[0]).removeClass('vjs-fullscreen');
+			}
+			console.log(player.annotator);
+		});
 	}
 	player.one('loadedRangeSlider', initialVideoFinished);//Loaded RangeSlider
 	
@@ -2279,6 +2289,7 @@ OpenVideoAnnotation.Annotator = function (element, options) {
 	options.optionsVideoJS = options.optionsVideoJS || {};
 	options.optionsRS = options.optionsRS || {};
 	options.optionsOVA = options.optionsOVA || {};
+	options.optionsRichText = options.optionsRichText || {};
 	
 	
 	//if there isn't store optinos it will create a uri and limit variables for the Back-end of Annotations 
@@ -2386,6 +2397,7 @@ OpenVideoAnnotation.Annotator = function (element, options) {
 	this.annotator.addPlugin("Geolocation");
 	this.annotator.addPlugin("Share");
 	this.annotator.addPlugin("VideoJS");
+	this.annotator.addPlugin("RichText",options.optionsRichText);
 	//Will be add the player and the annotations plugin for video-js in the annotator
 	this.annotator.mplayer = this.mplayer;
 	this.annotator.editor.VideoJS=-1;

@@ -562,10 +562,10 @@ div.video-js:hover > div.vjs-big-new-annotation.none {
 
 
 /* ---------------- Modify the CSS of Annotator plugin ---------------- */
-.annotator-adder,
-.annotator-outer,
-.annotator-widget,
-.annotator-notice {
+.annotator-wrapper.vjs-fullscreen .annotator-adder,
+.annotator-wrapper.vjs-fullscreen .annotator-outer,
+.annotator-wrapper.vjs-fullscreen .annotator-widget,
+.annotator-wrapper.vjs-fullscreen .annotator-notice {
 	z-index:3000000000; /*To fix full-screen*/
 }
 

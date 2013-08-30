@@ -28,6 +28,11 @@
 	<script src="lib/geolocation-annotator.min.js"></script>
 	<link href="lib/geolocation-annotator.min.css" rel="stylesheet">
 	
+	<!--RichText Pluging-->
+	<script src="lib/tinymce/tinymce.min.js"></script><!--tinymce for richText-->
+	<script src="lib/richText-annotator.min.js"></script>
+	<link href="lib/richText-annotator.min.css" rel="stylesheet">
+	
 	<!--OpenVideoAnnotations Pluging-->
 	<script src="build/ova.min.js"></script>
 	<link href="build/ova.min.css" rel="stylesheet">
@@ -113,6 +118,13 @@
 			optionsVideoJS: {techOrder: ["html5","flash","youtube"]},
 			optionsRS: {},
     		optionsOVA: {posBigNew:'none',NumAnnotations:20},
+    		optionsRichText: {
+				tinymce:{
+					selector: "li.annotator-item textarea",
+					plugins: "media image insertdatetime link",
+					toolbar: "insertfile undo redo | styleselect | bold italic | alignleft aligncenter alignright alignjustify | bullist numlist outdent indent | link image media ",
+				}
+    		},
     	}
     	//Load the plugin Open Video Annotation
 		var ova = new OpenVideoAnnotation.Annotator($('#airlock'),options);
