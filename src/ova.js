@@ -2074,7 +2074,6 @@ Annotator.Plugin.VideoJS = (function(_super) {
 	//constructor
 	function VideoJS() {
 		this.pluginSubmit = __bind(this.pluginSubmit, this);
-		this.updateField = __bind(this.updateField, this);
 		_ref = VideoJS.__super__.constructor.apply(this, arguments);
 		this.__indexOf = [].indexOf || function(item) { for (var i = 0, l = this.length; i < l; i++) { if (i in this && this[i] === item) return i; } return -1; }
 		return _ref;
@@ -2094,7 +2093,6 @@ Annotator.Plugin.VideoJS = (function(_super) {
 		this.field = this.annotator.editor.addField({
 			id: 'vjs-input-rangeTime-annotations',
 			type: 'input', //options (textarea,input,select,checkbox)
-			//load: this.updateField, //function will load before open the Editor
 			submit: this.pluginSubmit,
 			EditVideoAn: this.EditVideoAn
 		});
@@ -2110,13 +2108,6 @@ Annotator.Plugin.VideoJS = (function(_super) {
 		
 		return this.input = $(this.field).find(':input');
 	};
-
-	
-	
-	//-- Editor Methods
-	VideoJS.prototype.updateField = function(field, annotation) {
-		console.log("Plug-updateField");
-	};
 	
 
 	// New JSON for the database
@@ -2124,12 +2115,14 @@ Annotator.Plugin.VideoJS = (function(_super) {
 		console.log("Plug-pluginSubmit");
 		//Select the new JSON for the Object to save
 		if (this.EditVideoAn()){
-			var index = this.annotator.editor.VideoJS,
-				player = this.annotator.mplayer[index],
+			var annotator = this.annotator,
+				index = annotator.editor.VideoJS,
+				player = annotator.mplayer[index],
 				rs = player.rangeslider,
 				time = rs.getValues(),
-				ext,
-				isYoutube = (player && typeof player.techName!='undefined')?(player.techName == 'Youtube'):false;
+				isYoutube = (player && typeof player.techName!='undefined')?(player.techName == 'Youtube'):false,
+				isNew = typeof annotation.media=='undefined',
+				ext;
 			annotation.media = "video"; // - media
 			annotation.target = annotation.target || {}; // - target
 			annotation.target.container = player.id_ || ""; // - target.container
@@ -2143,6 +2136,14 @@ Annotator.Plugin.VideoJS = (function(_super) {
 			annotation.updated = new Date().toISOString(); // - updated
 			if (typeof annotation.created == 'undefined')
 				annotation.created = annotation.updated; // - created
+			
+			//show the new annotation
+			var eventAn = isNew?"annotationCreated":"annotationUpdated";
+			function afterFinish(){
+				player.annotations.showAnnotation(annotation);
+				annotator.unsubscribe(eventAn, afterFinish);
+			};
+			annotator.subscribe(eventAn, afterFinish);//show after the annotation is in the back-end
 		}else{
 			if (typeof annotation.media == 'undefined')
 				annotation.media = "text"; // - media
@@ -2204,55 +2205,60 @@ Annotator.Plugin.VideoJS = (function(_super) {
 		var EditVideoAn = this.EditVideoAn,
 			isVideoJS = this.isVideoJS,
 			self = this;
+			
+		//local functions
+		//-- Editor
+		function annotationEditorHidden(editor) {
+			console.log("annotationEditorHidden");
+			if (EditVideoAn()){
+				var index = annotator.editor.VideoJS;
+				annotator.mplayer[index].rangeslider.hide(); //Hide Range Slider
+				annotator.an[index].refreshDisplay(); //Reload the display of annotations
+			}
+			annotator.editor.VideoJS=-1;
+			annotator.unsubscribe("annotationEditorHidden", annotationEditorHidden);
+		};
+		function annotationEditorShown(editor,annotation) {
+			console.log("annotationEditorShown");
+			for (var index in annotator.an){
+				annotator.an[index].editAnnotation(annotation,editor);
+			}
+			annotator.subscribe("annotationEditorHidden", annotationEditorHidden);
+		};
+		//-- Annotations
+		function annotationDeleted(annotation) {
+			console.log("annotationDeleted");
+			
+			if (isVideoJS(annotation))
+				self._deleteAnnotation(annotation);
+		};
+		//-- Viewer
+		function hideViewer(){
+			for (var index in annotator.an){
+				annotator.an[index].AnDisplay.onCloseViewer();
+			}
+			annotator.viewer.unsubscribe("hide", hideViewer);
+		};
+		function annotationViewerShown(viewer,annotations) {
+			console.log("annotationViewerShown");
+			
+			var separation = viewer.element.hasClass(viewer.classes.invert.y)?5:-5,
+				newpos = {
+					top: parseFloat(viewer.element[0].style.top)+separation,
+					left: parseFloat(viewer.element[0].style.left)
+				};
+			viewer.element.css(newpos);
+			
+			//Remove the time to wait until disapear, to be more faster that annotator by default
+			viewer.element.find('.annotator-controls').removeClass(viewer.classes.showControls);
+			
+			annotator.viewer.subscribe("hide", hideViewer);
+		};	
 		
-			
-		this.annotator
-			//-- Editor
-			.subscribe("annotationEditorShown", function (editor,annotation) {
-				console.log("annotationEditorShown");
-				for (var index in annotator.an){
-					annotator.an[index].editAnnotation(annotation,editor);
-				}
-			})
-			.subscribe("annotationEditorHidden", function (editor) {
-				console.log("annotationEditorHidden");
-				
-				if (EditVideoAn()){
-					var index = annotator.editor.VideoJS;
-					annotator.mplayer[index].rangeslider.hide(); //Hide Range Slider
-					annotator.an[index].refreshDisplay(); //Reload the display of annotations
-				}
-
-				annotator.editor.VideoJS=-1;
-			})
-			//-- Annotations
-			.subscribe("annotationDeleted", function (annotation) {
-				console.log("annotationDeleted");
-				
-				if (isVideoJS(annotation))
-					self._deleteAnnotation(annotation);
-			})
-			//-- Viewer
-			.subscribe("annotationViewerShown", function (viewer,annotations) {
-				console.log("annotationViewerShown");
-				
-				var separation = viewer.element.hasClass(viewer.classes.invert.y)?5:-5,
-					newpos = {
-						top: parseFloat(viewer.element[0].style.top)+separation,
-						left: parseFloat(viewer.element[0].style.left)
-					};
-				viewer.element.css(newpos);
-				
-				//Remove the time to wait until disapear, to be more faster that annotator by default
-				viewer.element.find('.annotator-controls').removeClass(viewer.classes.showControls);
-			});
-			
-		this.annotator.viewer
-			.subscribe("hide", function (){
-				for (var index in annotator.an){
-					annotator.an[index].AnDisplay.onCloseViewer();
-				}
-			});
+		//subscribe to Annotator
+		annotator.subscribe("annotationEditorShown", annotationEditorShown)
+			.subscribe("annotationDeleted", annotationDeleted)
+			.subscribe("annotationViewerShown", annotationViewerShown);
 	};
 	return VideoJS;
 
