@@ -1645,6 +1645,12 @@ videojs.AnStat.prototype._getPoints = function(){
 					second:an.rangeTime.start,
 					entries:this._getNumberAnnotations(start)
 				});
+				if (an.rangeTime.start==an.rangeTime.end){//is a point
+					points.push({
+						second:an.rangeTime.end,
+						entries:this._getNumberAnnotations(end,true)
+					});
+				}
 			}
 			//end
 			if(!this._isFound(points,end)){
