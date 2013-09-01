@@ -91,27 +91,23 @@
 				
 				store: {
 					// The endpoint of the store on your server.
-					prefix: 'http://danielcebrian.com/annotations/api',
+					//prefix: 'http://afstore.aws.af.cm/annotator',
+					prefix: 'http://catch.aws.af.cm/annotator',
 					
-					/*urls: {
+					annotationData: {uri:'http://danielcebrian.com/annotations/demo.html'},
+
+					urls: {
 						// These are the default URLs.
 						create:  '/create',
 						read:    '/read/:id',
 						update:  '/update/:id',
 						destroy: '/destroy/:id',
 						search:  '/search'
-					},*/
-					// Attach the uri of the current page to all annotations to allow search.
-					annotationData: {
-						'uri': 'http://danielcebrian.com/annotations/demo.html'
 					},
-
-					// This will perform a "search" action rather than "read" when the plugin
-					// loads. Will request the last 20 annotations for the current url.
-					// eg. /store/endpoint/search?limit=20&uri=http://this/document/only
-					loadFromSearch: {
-						'limit': 10000,
-						'uri': 'http://danielcebrian.com/annotations/demo.html'
+					
+					loadFromSearch:{
+						limit:10000,
+						uri: 'http://danielcebrian.com/annotations/demo.html',
 					}
 				}
 			},
@@ -121,13 +117,20 @@
     		optionsRichText: {
 				tinymce:{
 					selector: "li.annotator-item textarea",
-					plugins: "media image insertdatetime link",
-					toolbar: "insertfile undo redo | styleselect | bold italic | alignleft aligncenter alignright alignjustify | bullist numlist outdent indent | link image media ",
+					plugins: "media image insertdatetime link code",
+					menubar: false,
+					toolbar_items_size: 'small',
+					extended_valid_elements : "iframe[src|frameborder|style|scrolling|class|width|height|name|align|id]",
+					toolbar: "insertfile undo redo | styleselect | bold italic | alignleft aligncenter alignright alignjustify | bullist numlist outdent indent | link image media rubric | code ",
 				}
     		},
     	}
     	//Load the plugin Open Video Annotation
 		var ova = new OpenVideoAnnotation.Annotator($('#airlock'),options);
+		/*ova.annotator.addPlugin('Auth', {
+		    tokenUrl: 'http://catch.aws.af.cm/annotator/token'
+		    //autoFetch: true
+		});*/
 		
 		//change the user (Experimental)
 		ova.setCurrentUser($('#username').val());
