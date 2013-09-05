@@ -2398,9 +2398,11 @@ OpenVideoAnnotation.Annotator = function (element, options) {
 	
 	//-- Activate all the plugins --//
 	// Annotator
-	this.annotator.addPlugin('Auth', options.optionsAnnotator.auth);
+	if (typeof options.optionsAnnotator.auth!='undefined')
+		this.annotator.addPlugin('Auth', options.optionsAnnotator.auth);
 	this.annotator.addPlugin("Permissions", options.optionsAnnotator.user);
-	this.annotator.addPlugin("Store", options.optionsAnnotator.store);
+	if (typeof options.optionsAnnotator.store!='undefined')
+		this.annotator.addPlugin("Store", options.optionsAnnotator.store);
 	this.annotator.addPlugin("Tags");
 	this.annotator.addPlugin("Geolocation");
 	this.annotator.addPlugin("Share");

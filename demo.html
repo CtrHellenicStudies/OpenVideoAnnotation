@@ -78,7 +78,7 @@
 	And you could use youtube video:
 	<br />
 	<video id="vid3" class="video-js vjs-default-skin" controls preload="none" width="640" height="264"
-	data-setup=''>
+	data-setup='{techOrder: ["html5","flash","youtube"]}'>
 		<source src="http://www.youtube.com/watch?v=-m_S-IDs3Wg" type="video/youtube">
 	</video>
     </div>
@@ -89,12 +89,12 @@
     		optionsAnnotator: {
 				user: { },
 				
-				auth: {tokenUrl:'http://catch.aws.af.cm/annotator/token'},
+				//auth: {tokenUrl:'http://catch.aws.af.cm/annotator/token'},
 				
 				store: {
 					// The endpoint of the store on your server.
 					//prefix: 'http://afstore.aws.af.cm/annotator',
-					prefix: 'http://catch.aws.af.cm/annotator',
+					prefix: 'http://danielcebrian.com/annotations/api',
 					
 					annotationData: {uri:'http://danielcebrian.com/annotations/demo.html'},
 
