@@ -89,6 +89,8 @@
     		optionsAnnotator: {
 				user: { },
 				
+				auth: {tokenUrl:'http://catch.aws.af.cm/annotator/token'},
+				
 				store: {
 					// The endpoint of the store on your server.
 					//prefix: 'http://afstore.aws.af.cm/annotator',
@@ -127,10 +129,6 @@
     	}
     	//Load the plugin Open Video Annotation
 		var ova = new OpenVideoAnnotation.Annotator($('#airlock'),options);
-		/*ova.annotator.addPlugin('Auth', {
-		    tokenUrl: 'http://catch.aws.af.cm/annotator/token'
-		    //autoFetch: true
-		});*/
 		
 		//change the user (Experimental)
 		ova.setCurrentUser($('#username').val());

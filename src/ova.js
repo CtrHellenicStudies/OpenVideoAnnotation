@@ -245,7 +245,6 @@ function vjsAnnotation_(options){
 			} else {
 				$(player.annotator.wrapper[0]).removeClass('vjs-fullscreen');
 			}
-			console.log(player.annotator);
 		});
 	}
 	player.one('loadedRangeSlider', initialVideoFinished);//Loaded RangeSlider
@@ -266,7 +265,7 @@ function vjsAnnotation(player,options){
 	options = options || {}; // plugin options
 	
 	if(!options.hasOwnProperty('posBigNew')) 
-		options.posBigNew = 'ul'; // ul = up left || ur = up right || bl = below left || br = below right || c = center
+		options.posBigNew = 'none'; // ul = up left || ur = up right || bl = below left || br = below right || c = center
 	if(!options.hasOwnProperty('showDisplay')) 
 		options.showDisplay = false; 
 	if(!options.hasOwnProperty('NumAnnotations')) 
@@ -1535,10 +1534,12 @@ videojs.AnStat.prototype.paintCanvas = function(){
 	this.canvas.style.marginTop = Math.round(this.marginTop)+'px';
 	
 	//Add the Max Concentration and Number of annotations
-	$(this.canvas).parent().append('<div class="vjs-totan-anstat-annotation">');
+	if($(this.canvas).parent().find('.vjs-totan-anstat-annotation').length==0){
+		$(this.canvas).parent().append('<div class="vjs-totan-anstat-annotation">');
+		$(this.canvas).parent().append('<div class="vjs-maxcon-anstat-annotation">');
+	}
 	var textCanvas = $(this.canvas).parent().find('.vjs-totan-anstat-annotation')[0];
 	textCanvas.innerHTML = TotAn+' total annotations';
-	$(this.canvas).parent().append('<div class="vjs-maxcon-anstat-annotation">');
 	var textCanvas = $(this.canvas).parent().find('.vjs-maxcon-anstat-annotation')[0];
 	textCanvas.innerHTML = 'Max Annotations = '+maxEn;
 	
@@ -2397,6 +2398,7 @@ OpenVideoAnnotation.Annotator = function (element, options) {
 	
 	//-- Activate all the plugins --//
 	// Annotator
+	this.annotator.addPlugin('Auth', options.optionsAnnotator.auth);
 	this.annotator.addPlugin("Permissions", options.optionsAnnotator.user);
 	this.annotator.addPlugin("Store", options.optionsAnnotator.store);
 	this.annotator.addPlugin("Tags");
