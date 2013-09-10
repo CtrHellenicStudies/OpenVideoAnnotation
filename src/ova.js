@@ -246,6 +246,10 @@ function vjsAnnotation_(options){
 				$(player.annotator.wrapper[0]).removeClass('vjs-fullscreen');
 			}
 		});
+		
+		//loaded plugin
+		this.loaded = true;
+		console.log("loaded");
 	}
 	player.one('loadedRangeSlider', initialVideoFinished);//Loaded RangeSlider
 	
@@ -1529,7 +1533,7 @@ videojs.AnStat.prototype.paintCanvas = function(){
 		maxEn = this._getMaxArray(points,'entries'),
 		TotAn = this.an.AnDisplay.el_.children.length;
 		duration = this.an.player.duration();
-		
+
 	//set the position of the canvas
 	this.canvas.style.marginTop = Math.round(this.marginTop)+'px';
 	
@@ -1596,7 +1600,10 @@ videojs.AnStat.prototype.paintCanvas = function(){
 		lastSe = p.second;
 		lastEn = p.entries;
 	}
-	ctx.lineTo(duration*w.X,maxEn*w.Y); //move vertically to the new point height
+	//set the graphic to the end of the video
+	ctx.lineTo(lastSe*w.X,maxEn*w.Y); 
+	ctx.moveTo(lastSe*w.X,maxEn*w.Y); 
+	ctx.lineTo(duration*w.X,maxEn*w.Y);
 	ctx.stroke();
 	
 	//dashed line down
@@ -2444,4 +2451,54 @@ OpenVideoAnnotation.Annotator.prototype.setposBigNew = function(idElem,position)
 	return this.mplayer[idElem].annotations.setposBigNew(position);
 };
 
+OpenVideoAnnotation.Annotator.prototype._isVideo = function(an){
+	//Detect if the annotation is a Open Video Annotation
+	var an = an || {}
+		rt = an.rangeTime,
+		isVideo = (typeof an.media!='undefined' && an.media=='video'),
+		hasContainer = (typeof an.target!='undefined' && typeof an.target.container!='undefined' ),
+		isNumber = (typeof rt!='undefined' && !isNaN(parseFloat(rt.start)) && isFinite(rt.start) && !isNaN(parseFloat(rt.end)) && isFinite(rt.end));
+	return (isVideo && hasContainer && isNumber);
+}
 
+OpenVideoAnnotation.Annotator.prototype.playTarget = function (annotationId){
+	var allannotations = this.annotator.plugins['Store'].annotations,
+		ovaId = annotationId,
+		mplayer = this.mplayer;
+	
+	for (var item in allannotations) {
+		var an = allannotations[item];
+		if (typeof an.id!='undefined' && an.id == ovaId){//this is the annotation
+			if(this._isVideo(an)){//It is a video
+				for (var index in mplayer){
+					var player = mplayer[index];
+					if (player.id_ == an.target.container){
+						var anFound = an;
+						function afterPlay(){
+							player.annotations.showAnnotation(anFound);
+							$('html,body').animate({
+								scrollTop: $("#"+player.id_).offset().top},
+								'slow');
+						}
+						player.play();
+						player.one('playing',afterPlay);
+						return false;//this will stop the code to not set a new player.one.
+					}
+				}
+			}else{//It is a text
+				var hasRanges = typeof an.ranges!='undefined' && typeof an.ranges[0] !='undefined',
+					startOffset = hasRanges?an.ranges[0].startOffset:'',
+					endOffset = hasRanges?an.ranges[0].endOffset:'';
+	
+				if(typeof startOffset!='undefined' && typeof endOffset!='undefined'){ 
+					//change the color
+					$(an.highlights).addClass('api'); 
+					//animate to the annotation
+					$('html,body').animate({
+						scrollTop: $(an.highlights[0]).offset().top},
+						'slow');
+				}
+			}
+		}
+	}
+}

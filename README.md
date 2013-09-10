@@ -169,3 +169,11 @@ Set the position of the new big annotation button. The values for the inlet posi
 ```js
 	ova.setposBigNew('divID',position);
 ```
+
+### playTarget(annotationId) ###
+
+Play an annotation using the annotation Id, like this example:
+
+```js
+	ova.playTarget('8I2NBkJbQoeF3-bqgpcwTw');
+```
