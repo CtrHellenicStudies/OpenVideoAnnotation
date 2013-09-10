@@ -248,7 +248,7 @@ function vjsAnnotation_(options){
 		});
 		
 		//loaded plugin
-		this.loaded = true;
+		plugin.loaded = true;
 		console.log("loaded");
 	}
 	player.one('loadedRangeSlider', initialVideoFinished);//Loaded RangeSlider
@@ -2424,33 +2424,10 @@ OpenVideoAnnotation.Annotator = function (element, options) {
 
 
 
-//----------------Public Functions for Open Video Annotator----------------//
+//----------------Local Functions for Open Video Annotator----------------//
 
-//Create a new video annotation
-OpenVideoAnnotation.Annotator.prototype.newVideoAn = function(idElem){
-	return this.mplayer[idElem].annotations.newan();
-};
-
-//Show the annotation display
-OpenVideoAnnotation.Annotator.prototype.showDisplay = function(idElem){
-	return this.mplayer[idElem].annotations.showDisplay();
-};
-
-//Hide the annotation display
-OpenVideoAnnotation.Annotator.prototype.hideDisplay = function(idElem){
-	return this.mplayer[idElem].annotations.hideDisplay();
-};
-
-//Refresh the annotation display
-OpenVideoAnnotation.Annotator.prototype.refreshDisplay = function(idElem){
-	return this.mplayer[idElem].annotations.hideDisplay();
-};
-
-//Set the position of the big new annotation button
-OpenVideoAnnotation.Annotator.prototype.setposBigNew = function(idElem,position){
-	return this.mplayer[idElem].annotations.setposBigNew(position);
-};
-
+//--local functions
+//if the annotation is a video return true
 OpenVideoAnnotation.Annotator.prototype._isVideo = function(an){
 	//Detect if the annotation is a Open Video Annotation
 	var an = an || {}
@@ -2460,6 +2437,53 @@ OpenVideoAnnotation.Annotator.prototype._isVideo = function(an){
 		isNumber = (typeof rt!='undefined' && !isNaN(parseFloat(rt.start)) && isFinite(rt.start) && !isNaN(parseFloat(rt.end)) && isFinite(rt.end));
 	return (isVideo && hasContainer && isNumber);
 }
+
+//if the ova has been loaded and the video is opened return true
+OpenVideoAnnotation.Annotator.prototype._isloaded = function(idElem){
+	var loaded = typeof this.mplayer[idElem].annotations.loaded!='undefined'?true:false;
+	return loaded;
+}
+
+//----------------Public Functions for Open Video Annotator----------------//
+
+//Create a new video annotation
+OpenVideoAnnotation.Annotator.prototype.newVideoAn = function(idElem){
+	var player = this.mplayer[idElem];
+	if (typeof player.play!='undefined'){
+		player.play();
+		player.one('playing',function(){
+			player.annotations.newan();
+			$('html,body').animate({
+				scrollTop: $("#"+player.id_).offset().top},
+				'slow');
+			player.pause();
+		});
+	}
+};
+
+//Show the annotation display
+OpenVideoAnnotation.Annotator.prototype.showDisplay = function(idElem){
+	if(this._isloaded(idElem))
+		return this.mplayer[idElem].annotations.showDisplay();
+};
+
+//Hide the annotation display
+OpenVideoAnnotation.Annotator.prototype.hideDisplay = function(idElem){
+	if(this._isloaded(idElem))
+		return this.mplayer[idElem].annotations.hideDisplay();
+};
+
+//Refresh the annotation display
+OpenVideoAnnotation.Annotator.prototype.refreshDisplay = function(idElem){
+	if(this._isloaded(idElem))
+		return this.mplayer[idElem].annotations.hideDisplay();
+};
+
+//Set the position of the big new annotation button
+OpenVideoAnnotation.Annotator.prototype.setposBigNew = function(idElem,position){
+	if(this._isloaded(idElem))
+		return this.mplayer[idElem].annotations.setposBigNew(position);
+};
 
 OpenVideoAnnotation.Annotator.prototype.playTarget = function (annotationId){
 	var allannotations = this.annotator.plugins['Store'].annotations,
@@ -2474,14 +2498,13 @@ OpenVideoAnnotation.Annotator.prototype.playTarget = function (annotationId){
 					var player = mplayer[index];
 					if (player.id_ == an.target.container){
 						var anFound = an;
-						function afterPlay(){
+						player.play();
+						player.one('playing',function(){
 							player.annotations.showAnnotation(anFound);
 							$('html,body').animate({
 								scrollTop: $("#"+player.id_).offset().top},
 								'slow');
-						}
-						player.play();
-						player.one('playing',afterPlay);
+						});
 						return false;//this will stop the code to not set a new player.one.
 					}
 				}
