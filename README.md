@@ -147,14 +147,6 @@ Hide the annotation display
 	ova.hideDisplay('divID');
 ```
 
-### loadAnnotations(VideoID) ###
-
-Refresh the annotation display
-
-```js
-	ova.loadAnnotations('divID');
-```
-
 ### setposBigNew(VideoID, position) ###
 
 Set the position of the new big annotation button. The values for the inlet position are:

@@ -233,10 +233,7 @@ function vjsAnnotation_(options){
 		}
 		
 		//set the number of Annotations to display
-		plugin.BackAnDisplay.el_.style.height = plugin.backDSBar.el_.style.height = (plugin.options.NumAnnotations+'em');
-		plugin.BackAnDisplay.el_.style.top = plugin.backDSBar.el_.style.top = "-"+(plugin.options.NumAnnotations+3+'em');
-		plugin.BackAnDisplayScroll.el_.children[0].style.top = "-"+(plugin.options.NumAnnotations+5+'em');
-		plugin.backDSTime.el_.children[0].style.top = "-"+(plugin.options.NumAnnotations+5+'em');
+		plugin.refreshDesignPanel();
 		
 		//check full-screen change
 		player.on('fullscreenchange',function() {
@@ -245,6 +242,7 @@ function vjsAnnotation_(options){
 			} else {
 				$(player.annotator.wrapper[0]).removeClass('vjs-fullscreen');
 			}
+			plugin.refreshDesignPanel();
 		});
 		
 		//loaded plugin
@@ -272,8 +270,8 @@ function vjsAnnotation(player,options){
 		options.posBigNew = 'none'; // ul = up left || ur = up right || bl = below left || br = below right || c = center
 	if(!options.hasOwnProperty('showDisplay')) 
 		options.showDisplay = false; 
-	if(!options.hasOwnProperty('NumAnnotations')) 
-		options.NumAnnotations = 16; 
+	/*if(!options.hasOwnProperty('NumAnnotations')) 
+		options.NumAnnotations = 16; */
 	if(!options.hasOwnProperty('showStatistics')) 
 		options.showStatistics = false; 
 	
@@ -579,6 +577,21 @@ vjsAnnotation.prototype = {
 			}
 		}
 	},
+	refreshDesignPanel: function(){
+		var player = this.player,
+			emtoPx = parseFloat($(this.backDSBar.el_).css('width')),
+			playerHeight = parseFloat($(player.el_).css('height')),
+			controlBarHeight = parseFloat($(player.controlBar.el_).css('height')),
+			newHeight = (playerHeight - controlBarHeight)/emtoPx-5;
+		/*this.BackAnDisplay.el_.style.height = this.backDSBar.el_.style.height = (this.options.NumAnnotations+'em');
+		this.BackAnDisplay.el_.style.top = this.backDSBar.el_.style.top = "-"+(this.options.NumAnnotations+3+'em');
+		this.BackAnDisplayScroll.el_.children[0].style.top = "-"+(this.options.NumAnnotations+5+'em');
+		this.backDSTime.el_.children[0].style.top = "-"+(this.options.NumAnnotations+5+'em');*/
+		this.BackAnDisplay.el_.style.height = this.backDSBar.el_.style.height = (newHeight+'em');
+		this.BackAnDisplay.el_.style.top = this.backDSBar.el_.style.top = "-"+(newHeight+3+'em');
+		this.BackAnDisplayScroll.el_.children[0].style.top = "-"+(newHeight+5+'em');
+		this.backDSTime.el_.children[0].style.top = "-"+(newHeight+5+'em');
+	},
 	_reset: function(){
 		//Hide all the components
 		this.hideDisplay();
@@ -599,6 +612,9 @@ vjsAnnotation.prototype = {
 		
 		//whether there is a playing selection
 		this.rs.bar.suspendPlay(); 
+		
+		//refresh the design
+		this.refreshDesignPanel();
 	},
 	_setOverRS: function(elem){
 		var annotator = this.player.annotator,
