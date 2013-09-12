@@ -184,11 +184,13 @@ function vjsAnnotation_(options){
 		var wrapper = $('.annotator-wrapper').parent()[0],
 			annotator = $.data(wrapper, 'annotator');
 		//wait for Annotator and the Share plugin
-		if (typeof annotator.isShareLoaded!='undefined' && annotator.isShareLoaded){
-			annotator.unsubscribe('shareloaded',initialVideoFinished);
-		}else{
-			annotator.subscribe('shareloaded',initialVideoFinished);
-			return false;
+		if (typeof Annotator.Plugin["Share"] === 'function') {
+			if (typeof annotator.isShareLoaded!='undefined' && annotator.isShareLoaded){
+				annotator.unsubscribe('shareloaded',initialVideoFinished);
+			}else{
+				annotator.subscribe('shareloaded',initialVideoFinished);
+				return false;
+			}
 		}
 		
 		var plugin = player.annotations;
@@ -247,7 +249,6 @@ function vjsAnnotation_(options){
 		
 		//loaded plugin
 		plugin.loaded = true;
-		console.log("loaded");
 	}
 	player.one('loadedRangeSlider', initialVideoFinished);//Loaded RangeSlider
 	
@@ -2423,14 +2424,28 @@ OpenVideoAnnotation.Annotator = function (element, options) {
 	// Annotator
 	if (typeof options.optionsAnnotator.auth!='undefined')
 		this.annotator.addPlugin('Auth', options.optionsAnnotator.auth);
+		
 	this.annotator.addPlugin("Permissions", options.optionsAnnotator.user);
+	
 	if (typeof options.optionsAnnotator.store!='undefined')
 		this.annotator.addPlugin("Store", options.optionsAnnotator.store);
-	this.annotator.addPlugin("Tags");
-	this.annotator.addPlugin("Geolocation");
-	this.annotator.addPlugin("Share");
-	this.annotator.addPlugin("VideoJS");
-	this.annotator.addPlugin("RichText",options.optionsRichText);
+		
+	this.annotator.addPlugin("Tags");//it is obligatory to have
+	
+    if (typeof Annotator.Plugin["Geolocation"] === 'function') 
+		this.annotator.addPlugin("Geolocation");
+		
+	if (typeof Annotator.Plugin["Share"] === 'function') 
+		this.annotator.addPlugin("Share");
+		
+	this.annotator.addPlugin("VideoJS"); //it is obligatory to have
+	
+	if (typeof Annotator.Plugin["RichText"] === 'function') 
+		this.annotator.addPlugin("RichText",options.optionsRichText);
+		
+	if (typeof Annotator.Plugin["Reply"] === 'function') 
+		this.annotator.addPlugin("Reply");
+		
 	//Will be add the player and the annotations plugin for video-js in the annotator
 	this.annotator.mplayer = this.mplayer;
 	this.annotator.editor.VideoJS=-1;
