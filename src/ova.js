@@ -2529,13 +2529,20 @@ OpenVideoAnnotation.Annotator.prototype.playTarget = function (annotationId){
 					var player = mplayer[index];
 					if (player.id_ == an.target.container){
 						var anFound = an;
-						player.play();
-						player.one('playing',function(){
+						
+						var playFunction = function(){
 							player.annotations.showAnnotation(anFound);
 							$('html,body').animate({
 								scrollTop: $("#"+player.id_).offset().top},
 								'slow');
-						});
+						};
+						if (player.paused()) {
+							player.play();
+							player.one('playing',playFunction);
+						}else{
+							playFunction();
+						}
+						
 						return false;//this will stop the code to not set a new player.one.
 					}
 				}
