@@ -2425,7 +2425,8 @@ OpenVideoAnnotation.Annotator = function (element, options) {
 	if (typeof options.optionsAnnotator.auth!='undefined')
 		this.annotator.addPlugin('Auth', options.optionsAnnotator.auth);
 		
-	this.annotator.addPlugin("Permissions", options.optionsAnnotator.user);
+	if (typeof options.optionsAnnotator.permissions!='undefined')
+		this.annotator.addPlugin("Permissions", options.optionsAnnotator.permissions);
 	
 	if (typeof options.optionsAnnotator.store!='undefined')
 		this.annotator.addPlugin("Store", options.optionsAnnotator.store);
