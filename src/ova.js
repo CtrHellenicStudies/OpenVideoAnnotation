@@ -2433,6 +2433,15 @@ OpenVideoAnnotation.Annotator = function (element, options) {
 		
 	this.annotator.addPlugin("Tags");//it is obligatory to have
 	
+	this.annotator.addPlugin("Filter", {
+  filters: [
+    {
+      label: 'Media',
+      property: 'media'
+    }
+  ]
+});//it is obligatory to have
+	
     if (typeof Annotator.Plugin["Geolocation"] === 'function') 
 		this.annotator.addPlugin("Geolocation");
 		
