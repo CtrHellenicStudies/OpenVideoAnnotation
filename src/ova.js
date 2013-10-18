@@ -2537,7 +2537,7 @@ OpenVideoAnnotation.Annotator.prototype.playTarget = function (annotationId){
 			if(this._isVideo(an)){//It is a video
 				for (var index in mplayer){
 					var player = mplayer[index];
-					if (player.id_ == an.target.container){
+					if (player.id_ == an.target.container && player.tech.options_.source.src == an.target.src){
 						var anFound = an;
 						
 						var playFunction = function(){
