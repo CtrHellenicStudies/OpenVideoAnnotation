@@ -2546,7 +2546,10 @@ OpenVideoAnnotation.Annotator.prototype.playTarget = function (annotationId){
 								var startAPI = function(){
 									player.annotations.showAnnotation(anFound);
 								}
-								player.one('loadedRangeSlider', startAPI);//show Annotations once the RangeSlider is loaded
+								if (player.annotations.loaded)
+									startAPI();
+								else
+									player.one('loadedRangeSlider', startAPI);//show Annotations once the RangeSlider is loaded
 							}else{
 								player.annotations.showAnnotation(anFound);
 							}
