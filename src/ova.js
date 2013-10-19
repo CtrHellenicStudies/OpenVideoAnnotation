@@ -2541,7 +2541,16 @@ OpenVideoAnnotation.Annotator.prototype.playTarget = function (annotationId){
 						var anFound = an;
 						
 						var playFunction = function(){
-							player.annotations.showAnnotation(anFound);
+							//Fix problem with youtube videos in the first play. The plugin don't have this trigger
+							if (player.techName == 'Youtube'){
+								var startAPI = function(){
+									player.annotations.showAnnotation(anFound);
+								}
+								player.one('loadedRangeSlider', startAPI);//show Annotations once the RangeSlider is loaded
+							}else{
+								player.annotations.showAnnotation(anFound);
+							}
+							
 							$('html,body').animate({
 								scrollTop: $("#"+player.id_).offset().top},
 								'slow');
