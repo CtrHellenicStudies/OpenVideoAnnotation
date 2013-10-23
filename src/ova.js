@@ -2320,7 +2320,6 @@ OpenVideoAnnotation.Annotator = function (element, options) {
 	options.optionsVideoJS = options.optionsVideoJS || {};
 	options.optionsRS = options.optionsRS || {};
 	options.optionsOVA = options.optionsOVA || {};
-	options.optionsRichText = options.optionsRichText || {};
 	
 	
 	//if there isn't store optinos it will create a uri and limit variables for the Back-end of Annotations 
@@ -2345,7 +2344,7 @@ OpenVideoAnnotation.Annotator = function (element, options) {
 
 	//-- Init all the classes --/
 	//Annotator
-	this.annotator = $(element).annotator().data('annotator');
+	this.annotator = $(element).annotator(options.optionsAnnotator.annotator).data('annotator');
 	
 	
 	//Video-JS
@@ -2433,25 +2432,27 @@ OpenVideoAnnotation.Annotator = function (element, options) {
 		
 	this.annotator.addPlugin("Tags");//it is obligatory to have
 	
+	/*
 	this.annotator.addPlugin("Filter", {
-  filters: [
-    {
-      label: 'Media',
-      property: 'media'
-    }
-  ]
-});//it is obligatory to have
+	  filters: [
+		{
+		  label: 'Media',
+		  property: 'media'
+		}
+	  ]
+	});//it is obligatory to have
+	*/
 	
     if (typeof Annotator.Plugin["Geolocation"] === 'function') 
-		this.annotator.addPlugin("Geolocation");
+		this.annotator.addPlugin("Geolocation",options.optionsAnnotator.geolocation);
 		
 	if (typeof Annotator.Plugin["Share"] === 'function') 
-		this.annotator.addPlugin("Share");
+		this.annotator.addPlugin("Share",options.optionsAnnotator.share);
 		
 	this.annotator.addPlugin("VideoJS"); //it is obligatory to have
 	
 	if (typeof Annotator.Plugin["RichText"] === 'function') 
-		this.annotator.addPlugin("RichText",options.optionsRichText);
+		this.annotator.addPlugin("RichText",options.optionsAnnotator.richText);
 		
 	if (typeof Annotator.Plugin["Reply"] === 'function') 
 		this.annotator.addPlugin("Reply");
@@ -2459,6 +2460,8 @@ OpenVideoAnnotation.Annotator = function (element, options) {
 	//Will be add the player and the annotations plugin for video-js in the annotator
 	this.annotator.mplayer = this.mplayer;
 	this.annotator.editor.VideoJS=-1;
+	
+	this.options = options;
 	
 	return this;
 }
