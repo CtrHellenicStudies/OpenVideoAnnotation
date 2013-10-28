@@ -136,7 +136,8 @@ Util.mousePosition = function(e, offsetEl) {
                     temp;
 
                 // Loop through properties
-                for(var i=0;i < data.props.length; i++){
+                var length = typeof data!='undefined' && typeof data.props!='undefined'?data.props.length:0;
+                for(var i=0;i < length; i++){
                     temp = el.css(data.props[i]);
                     if(data.vals[i] != temp){
                         data.vals[i] = temp;
@@ -745,6 +746,10 @@ videojs.BigNewAnnotation = videojs.Button.extend({
 
 videojs.BigNewAnnotation.prototype.init_ = function(){
 	this.an = this.player_.annotations;
+	//Hide Button if the user has selected readOnly in the Annotator options
+	var opts = this.an.options.optionsAnnotator;
+	if (typeof opts!='undefined' && typeof opts.readOnly!='undefined' && opts.readOnly)
+		this.hide();
 };
 
 videojs.BigNewAnnotation.prototype.createEl = function(){
@@ -881,6 +886,10 @@ videojs.NewAnnotation = videojs.Button.extend({
 
 videojs.NewAnnotation.prototype.init_ = function(){
 	this.an = this.player_.annotations;
+	//Hide Button if the user has selected readOnly in the Annotator options
+	var opts = this.an.options.optionsAnnotator;
+	if (typeof opts!='undefined' && typeof opts.readOnly!='undefined' && opts.readOnly)
+		this.hide();
 };
 
 videojs.NewAnnotation.prototype.createEl = function(){
@@ -2345,6 +2354,7 @@ OpenVideoAnnotation.Annotator = function (element, options) {
 	//-- Init all the classes --/
 	//Annotator
 	this.annotator = $(element).annotator(options.optionsAnnotator.annotator).data('annotator');
+	options.optionsOVA.optionsAnnotator = options.optionsAnnotator.annotator; //send the Annotator's options to OVA
 	
 	
 	//Video-JS
