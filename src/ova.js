@@ -216,7 +216,6 @@ function vjsAnnotation_(options){
 		
 		//get annotations
 		var allannotations = annotator.plugins['Store'].annotations;
-		player.allannotations = allannotations;
 		plugin.refreshDisplay();
 		
 		//-- Listener to Range Slider Plugin
@@ -471,7 +470,7 @@ vjsAnnotation.prototype = {
 	refreshDisplay: function(){
 		console.log("loadingAnnotations");
 		var count = 0, 
-			allannotations = this.player.allannotations;
+			allannotations = this.annotator.plugins['Store'].annotations;
 		
 		//Sort by date the Array
 		this._sortByDate(allannotations);
@@ -1666,7 +1665,7 @@ videojs.AnStat.prototype._getMaxArray = function(points,variable){
 
 videojs.AnStat.prototype._getPoints = function(){
 	var points = [],
-		allannotations = this.an.player.allannotations;
+		allannotations = this.an.annotator.plugins['Store'].annotations;
 	for (var index in allannotations){
 		var an = allannotations[index],
 			start,end;
@@ -1712,7 +1711,7 @@ videojs.AnStat.prototype._isFound = function(array,elem){
 
 videojs.AnStat.prototype._getNumberAnnotations = function(time,end){
 	var num = (typeof end!='undefined' && end)?-1:0,
-		allannotations = this.an.player.allannotations;
+		allannotations = this.an.annotator.plugins['Store'].annotations;
 	for (var index in allannotations){
 		var an = allannotations[index];
 		if (this.an._isVideoJS(an)){
@@ -2116,7 +2115,7 @@ videojs.BackAnDisplayScrollTime.prototype.getTimes = function(AnEl){
 
 
 
-//----------------Plugin for Annotator to setup for videojs----------------//
+//----------------Plugin for Annotator to setup videojs----------------//
 
 Annotator.Plugin.VideoJS = (function(_super) {
 	__extends(VideoJS, _super);
@@ -2231,20 +2230,15 @@ Annotator.Plugin.VideoJS = (function(_super) {
 	VideoJS.prototype._deleteAnnotation = function(an){
 		var target = an.target || {},
 			container = target.container || {},
-			annotator = this.annotator,
-			player = annotator.mplayer[container],
-			annotations = player.annotations,
+			player = this.annotator.mplayer[container],
 			index;
-		index = this.__indexOf.call(player.allannotations, an);
-		if (index >= 0) {
-			//Remove the annotation element from the display
-			if (typeof player.allannotations[index] != 'undefined')
-				delete player.allannotations[index]; //remove the object
-			
-			
-			player.rangeslider.hide(); //Hide Range Slider
-			annotations.refreshDisplay(); //Reload the display of annotation
-		}
+		//Remove the annotation of the plugin Store
+		var annotations = this.annotator.plugins['Store'].annotations;
+		if (annotations.indexOf(an)>-1)
+			annotations.splice(annotations.indexOf(an), 1);
+		
+		player.rangeslider.hide(); //Hide Range Slider
+		player.annotations.refreshDisplay(); //Reload the display of annotation
 	};
 	
 	
@@ -2332,9 +2326,9 @@ OpenVideoAnnotation.Annotator = function (element, options) {
 	
 	
 	//if there isn't store optinos it will create a uri and limit variables for the Back-end of Annotations 
-	var store = options.optionsAnnotator.store;
-	if (typeof store=='undefined')
+	if (typeof options.optionsAnnotator.store=='undefined')
 		options.optionsAnnotator.store = {};
+	var store = options.optionsAnnotator.store;
 	if (typeof store.annotationData=='undefined')
 		store.annotationData = {};
 	if (typeof store.annotationData.uri=='undefined'){
