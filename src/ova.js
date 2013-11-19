@@ -464,7 +464,7 @@ vjsAnnotation.prototype = {
 			editor.checkOrientation();
 			
 			//set the VideoJS variable
-			this.annotator.editor.VideoJS = player.id_;
+			editor.VideoJS = player.id_;
 		}
 	},
 	refreshDisplay: function(){
@@ -2581,6 +2581,8 @@ OpenVideoAnnotation.Annotator.prototype.playTarget = function (annotationId){
 					endOffset = hasRanges?an.ranges[0].endOffset:'';
 	
 				if(typeof startOffset!='undefined' && typeof endOffset!='undefined'){ 
+				
+					$(an.highlights).parent().find('.annotator-hl').removeClass('api'); 
 					//change the color
 					$(an.highlights).addClass('api'); 
 					//animate to the annotation
