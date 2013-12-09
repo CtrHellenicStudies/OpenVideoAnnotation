@@ -689,7 +689,7 @@ vjsAnnotation.prototype = {
 		var player = this.player,
 			rt = an.rangeTime,
 			isOpenVideojs = (typeof this.player != 'undefined'),
-			isVideo = (typeof an.media!='undefined' && an.media=='video'),
+			isVideo = (typeof an.media!='undefined' && (an.media=='video' || an.media=='audio')),
 			isContainer = (typeof an.target!='undefined' && an.target.container==player.id_ ),
 			isNumber = (typeof rt!='undefined' && !isNaN(parseFloat(rt.start)) && isFinite(rt.start) && !isNaN(parseFloat(rt.end)) && isFinite(rt.end)),
 			isSource = false;
@@ -2171,8 +2171,9 @@ Annotator.Plugin.VideoJS = (function(_super) {
 				time = rs.getValues(),
 				isYoutube = (player && typeof player.techName!='undefined')?(player.techName == 'Youtube'):false,
 				isNew = typeof annotation.media=='undefined',
-				ext;
-			annotation.media = "video"; // - media
+				ext,
+				type = player.options_.sources[0].type.split("/") || "";
+			if (typeof annotation.media == 'undefined') annotation.media = typeof type[0]!='undefined'?type[0]:"video"; // - media (by default: video)
 			annotation.target = annotation.target || {}; // - target
 			annotation.target.container = player.id_ || ""; // - target.container
 			annotation.target.src = player.options_.sources[0].src || ""; // - target.src (media source)
@@ -2221,7 +2222,7 @@ Annotator.Plugin.VideoJS = (function(_super) {
 			annotator = window.annotator = $.data(wrapper, 'annotator'),
 			rt = an.rangeTime,
 			isOpenVideojs = (typeof annotator.mplayer != 'undefined'),
-			isVideo = (typeof an.media!='undefined' && an.media=='video'),
+			isVideo = (typeof an.media!='undefined' && (an.media=='video' || an.media=='audio')),
 			isNumber = (typeof rt!='undefined' && !isNaN(parseFloat(rt.start)) && isFinite(rt.start) && !isNaN(parseFloat(rt.end)) && isFinite(rt.end));
 		return (isOpenVideojs && isVideo && isNumber);
 	};
@@ -2230,15 +2231,30 @@ Annotator.Plugin.VideoJS = (function(_super) {
 	VideoJS.prototype._deleteAnnotation = function(an){
 		var target = an.target || {},
 			container = target.container || {},
-			player = this.annotator.mplayer[container],
-			index;
-		//Remove the annotation of the plugin Store
-		var annotations = this.annotator.plugins['Store'].annotations;
-		if (annotations.indexOf(an)>-1)
-			annotations.splice(annotations.indexOf(an), 1);
+			player = this.annotator.mplayer[container];
+		
+        var annotator = this.annotator,
+        	self = this,
+        	annotations = annotator.plugins['Store'].annotations,
+            tot = typeof annotations !='undefined'?annotations.length:0,
+            attempts = 0; // max 100
+            
+        //This is to watch the annotations object, to see when is deleted the annotation
+        var ischanged = function(){
+            var new_tot = annotator.plugins['Store'].annotations.length;
+            if (attempts<100)
+                setTimeout(function(){
+                    if (new_tot != tot){
+						player.annotations.refreshDisplay(); //Reload the display of annotation
+                    }else{
+                        attempts++;
+                        ischanged();
+                    }
+                },100); //wait for the change in the annotations
+        };
+        ischanged();
 		
 		player.rangeslider.hide(); //Hide Range Slider
-		player.annotations.refreshDisplay(); //Reload the display of annotation
 	};
 	
 	
@@ -2480,7 +2496,7 @@ OpenVideoAnnotation.Annotator.prototype._isVideo = function(an){
 	//Detect if the annotation is a Open Video Annotation
 	var an = an || {}
 		rt = an.rangeTime,
-		isVideo = (typeof an.media!='undefined' && an.media=='video'),
+		isVideo = (typeof an.media!='undefined' && (an.media=='video' || an.media=='audio')),
 		hasContainer = (typeof an.target!='undefined' && typeof an.target.container!='undefined' ),
 		isNumber = (typeof rt!='undefined' && !isNaN(parseFloat(rt.start)) && isFinite(rt.start) && !isNaN(parseFloat(rt.end)) && isFinite(rt.end));
 	return (isVideo && hasContainer && isNumber);
