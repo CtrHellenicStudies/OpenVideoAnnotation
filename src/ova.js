@@ -1,3 +1,22 @@
+/* 
+Open Video Annotation v1.0 (http://openvideoannotation.org/)
+Copyright (C) 2014 CHS (Harvard University), Daniel Cebrián Robles 
+License: https://github.com/CtrHellenicStudies/OpenVideoAnnotation/License.rst
+
+This program is free software; you can redistribute it and/or
+modify it under the terms of the GNU General Public License
+as published by the Free Software Foundation; either version 2
+of the License, or (at your option) any later version.
+
+This program is distributed in the hope that it will be useful,
+but WITHOUT ANY WARRANTY; without even the implied warranty of
+MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+GNU General Public License for more details.
+
+You should have received a copy of the GNU General Public License
+along with this program; if not, write to the Free Software
+Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
+*/
 //----------------Utilities----------------//
 var _ref,
   __bind = function(fn, me){ return function(){ return fn.apply(me, arguments); }; },
@@ -314,6 +333,39 @@ vjsAnnotation.prototype = {
 		
 		//local variables
 		this.editing = false;
+		
+		var wrapper = $('.annotator-wrapper').parent()[0],
+			annotator = $.data(wrapper, 'annotator'),
+			self = this;
+		//Subscribe to Annotator changes
+        annotator.subscribe("annotationsLoaded", function (annotations){
+            if(self.loaded)
+                self.refreshDisplay();
+        });
+        annotator.subscribe("annotationUpdated", function (annotation){
+           if(self.loaded)
+                self.refreshDisplay();
+        });
+        annotator.subscribe("annotationDeleted", function (annotation){
+            var annotations = annotator.plugins['Store'].annotations,
+                tot = typeof annotations !='undefined'?annotations.length:0,
+                attempts = 0; // max 100
+            //This is to watch the annotations object, to see when is deleted the annotation
+            var ischanged = function(){
+                var new_tot = annotator.plugins['Store'].annotations.length;
+                if (attempts<100)
+                    setTimeout(function(){
+                        if (new_tot != tot){
+                            if(self.loaded)
+                                self.refreshDisplay();
+                        }else{
+                            attempts++;
+                            ischanged();
+                        }
+                    },100); //wait for the change in the annotations
+            };
+            ischanged();
+        });
 		
 		this.BigNewAn.hide(); //Hide until the video is load
 	},
@@ -2234,7 +2286,6 @@ Annotator.Plugin.VideoJS = (function(_super) {
 			player = this.annotator.mplayer[container];
 		
         var annotator = this.annotator,
-        	self = this,
         	annotations = annotator.plugins['Store'].annotations,
             tot = typeof annotations !='undefined'?annotations.length:0,
             attempts = 0; // max 100
@@ -2450,8 +2501,10 @@ OpenVideoAnnotation.Annotator = function (element, options) {
 	if (typeof options.optionsAnnotator.store!='undefined')
 		this.annotator.addPlugin("Store", options.optionsAnnotator.store);
 		
-	this.annotator.addPlugin("Tags");//it is obligatory to have
-	
+	if (typeof options.optionsAnnotator.highlightTags!='undefined')
+		this.annotator.addPlugin("HighlightTags", options.optionsAnnotator.highlightTags);
+
+         
 	/*
 	this.annotator.addPlugin("Filter", {
 	  filters: [
@@ -2476,6 +2529,9 @@ OpenVideoAnnotation.Annotator = function (element, options) {
 		
 	if (typeof Annotator.Plugin["Reply"] === 'function') 
 		this.annotator.addPlugin("Reply");
+            
+        if (typeof Annotator.Plugin["Flagging"] === 'function') 
+		this.annotator.addPlugin("Flagging");
 		
 	//Will be add the player and the annotations plugin for video-js in the annotator
 	this.annotator.mplayer = this.mplayer;
