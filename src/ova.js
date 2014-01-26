@@ -1,7 +1,7 @@
 /* 
 Open Video Annotation v1.0 (http://openvideoannotation.org/)
 Copyright (C) 2014 CHS (Harvard University), Daniel Cebrián Robles 
-License: https://github.com/CtrHellenicStudies/OpenVideoAnnotation/License.rst
+License: https://github.com/CtrHellenicStudies/OpenVideoAnnotation/blob/master/License.rst
 
 This program is free software; you can redistribute it and/or
 modify it under the terms of the GNU General Public License
