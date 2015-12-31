@@ -8,7 +8,7 @@ Annotations.js is a plugin for Video JS player. The aim of this plugin is to cre
 
 There is a demo of the annotations plugin in the next webpage:
 
-http://danielcebrian.com/annotations/demo.html
+https://gteavirtual.org/ova/index.php?r=site/page&view=explore
 
 ##Installation
 
