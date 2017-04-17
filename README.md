@@ -1,16 +1,16 @@
 OpenVideoAnnotation
 ==================
-##Annotation Plugin
+## Annotation Plugin
 
 Annotations.js is a plugin for Video JS player. The aim of this plugin is to create annotations in video-js.
 
-##Live-Demo
+## Live-Demo
 
 There is a demo of the annotations plugin in the next webpage:
 
 https://gteavirtual.org/ova/index.php?r=site/page&view=explore
 
-##Installation
+## Installation
 
 To use the tool you need to install the [video-js player plugin](https://github.com/videojs/video.js/), [rangeslider plugin for video-js](https://github.com/danielcebrian/rangeslider-videojs) and the [Annotator plugin](https://github.com/okfn/annotator/) to annotate text and video.
 
@@ -38,7 +38,7 @@ videojs:
 	</head>
 ```
 
-##Usage
+## Usage
 
 Load all the videos in video-js with different id, as you can see in the [tutorial of video-js player](https://github.com/videojs/video.js/blob/master/docs/setup.md) 
 
@@ -88,7 +88,7 @@ posBigNew (options):
 
 NumAnnotations: it is the number of Annotation that will be load in the display. The other annotation will be hide under the scroll. (By default: 16)
 
-#URl API to preload an annotation
+# URl API to preload an annotation
 
 This plugin allow to share an annotation with two methodologies:
 
@@ -119,7 +119,7 @@ An example of URL API is this:
 http://danielcebrian.com/annotations/demo.html?ovaContainer=vid1&ovaSrc=http%3A%2F%2Fvideo-js.zencoder.com%2Foceans-clip.mp4&ovaStart=2&ovaEnd=10&ovaText=This%20is%20test&ovaUser=Test%20User
 
 
-#API Methods to take control of the plugin
+# API Methods to take control of the plugin
 
 Once the plugin is started and the DOM readed, we can control the Open Video Annotator giving the id of the video in the html. It is possible to use the following functions:
 
